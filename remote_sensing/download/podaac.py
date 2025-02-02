@@ -1,4 +1,11 @@
-""" Methods for downloading data from the PO.DAAC archive. """
+""" Methods for downloading data from the PO.DAAC archive. 
+
+Makes use of code taken from the podaac_data_downloader package script,
+aka subscriber.podaac_data_downloader
+
+"""
+
+import os
 
 from datetime import datetime, timedelta, timezone
 
@@ -11,6 +18,11 @@ from IPython import embed
 
 page_size = 2000
 provider = 'POCLOUD'
+
+if os.getenv('OS_RS') is not None:
+    podaac_path = os.path.join(os.getenv('OS_RS'), 'PODAAC')
+else:
+    podaac_path = os.path.join('./', 'PODAAC')
 
 def grab_file_list(collection:str, verbose:bool=True,
                time_range:tuple=None,
@@ -92,3 +104,77 @@ def grab_file_list(collection:str, verbose:bool=True,
 
     # Return
     return downloads, checksums
+
+
+def download_files(file_list:list, 
+                   download_dir:str=None, 
+                   clobber:bool=False,
+                   verbose:bool=True):
+    """ Download files from the PO.DAAC archive.
+
+    Parameters
+    -----------
+    file_list : list
+        List of files to download.
+    download_dir : str, optional
+        Directory to download files to. Default is the podaac_path
+        A sub-directory is created for each collection.
+    clobber : bool, optional
+        Overwrite existing files. Default is False.
+    verbose : bool, optional
+        Print verbose output. Default is True.
+
+    Returns
+    --------
+    None
+
+    """
+    # Authenicate with Earthdata Login
+    pa.setup_earthdata_login_auth(pa.edl)
+    token = pa.get_token(pa.token_url)
+
+    if download_dir is None:
+        download_dir = podaac_path
+    if not os.path.isdir(download_dir):
+        os.makedirs(download_dir)
+
+    # Loop on files
+    success_cnt = failure_cnt = skip_cnt = 0
+    for f in file_list:
+
+        # Parse filename
+        fparse = f.split('/')
+
+        # Collection
+        collection = fparse[-2]
+
+        full_path = os.path.join(download_dir, collection)
+        if not os.path.isdir(full_path):
+            print(f'Creating directory: {full_path}')
+            os.makedirs(full_path)
+
+        # Filename
+        filename = fparse[-1]
+
+
+        # Download
+
+        try:
+            # -d flag, args.outputDirectory
+            output_path = os.path.join(full_path, filename)
+            
+            # decide if we should actually download this file (e.g. we may already have the latest version)
+            if os.path.isfile(output_path) and not clobber:# and pa.checksum_does_match(output_path, checksums)):
+                print(f'File exists: {filename}\nUse clobber=True to overwrite')
+                skip_cnt += 1
+                continue
+
+            pa.download_file(f,output_path)
+            success_cnt = success_cnt + 1
+
+            # Success
+            print(f'File downloaded: {output_path}')
+
+        except Exception:
+            print(f'File failed to download: {filename}.') 
+            failure_cnt = failure_cnt + 1
