@@ -24,10 +24,35 @@ if os.getenv('OS_RS') is not None:
 else:
     podaac_path = os.path.join('./', 'PODAAC')
 
-def grab_file_list(collection:str, verbose:bool=True,
-               time_range:tuple=None,
-               dt_past:dict=None,
-               bbox:str=None):
+def grab_file_list(collection:str, 
+                   time_range:tuple=None, 
+                   dt_past:dict=None, 
+                   bbox:str=None,
+                   verbose:bool=True):
+    """ Grab a list of files from the PO.DAAC archive.
+
+    Args:
+        collection (str): PO.DAAC collection name.
+        verbose (bool, optional): Print verbose output. Defaults to True.
+        time_range (tuple, optional): Start and end date in ISO format, 
+            e.g. (2025-01-01T00:00:00Z, 2025-01-02T00:00:00Z).
+            Defaults to None.
+        dt_past (dict, optional): Time range in the past, which
+            must be resolve by timedelta, e.g. dict(days=1).
+            Defaults to None but will be set to 1 day if time_range is None
+            and time_range is not specified.
+        bbox (str, optional): Bounding box in the format of
+            "lon_min,lat_min,lon_max,lat_max" in deg 
+            Defaults to None.
+
+    Raises:
+        e: _description_
+
+    Returns:
+        tuple:
+            - list: List of files.
+            - list: List of checksums.
+    """
     
     # Authenicate with Earthdata Login
     pa.setup_earthdata_login_auth(pa.edl)
