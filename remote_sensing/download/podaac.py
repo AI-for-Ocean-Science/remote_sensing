@@ -26,6 +26,7 @@ else:
 
 def grab_file_list(collection:str, verbose:bool=True,
                time_range:tuple=None,
+               dt_past:dict=None,
                bbox:str=None):
     
     # Authenicate with Earthdata Login
@@ -43,7 +44,9 @@ def grab_file_list(collection:str, verbose:bool=True,
     # Times
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     if time_range is None:
-        start_date_time = datetime.now(timezone.utc) - timedelta(weeks=1)
+        if dt_past is None:
+            dt_past = dict(days=1)
+        start_date_time = datetime.now(timezone.utc) - timedelta(**dt_past)
         start_date_time = start_date_time.strftime("%Y-%m-%dT%H:%M:%SZ")
         end_date_time = now
     else:
@@ -134,6 +137,7 @@ def download_files(file_list:list,
     token = pa.get_token(pa.token_url)
 
     if download_dir is None:
+        print(f"Using default download directory: {podaac_path}")
         download_dir = podaac_path
     if not os.path.isdir(download_dir):
         os.makedirs(download_dir)
@@ -165,7 +169,7 @@ def download_files(file_list:list,
             
             # decide if we should actually download this file (e.g. we may already have the latest version)
             if os.path.isfile(output_path) and not clobber:# and pa.checksum_does_match(output_path, checksums)):
-                print(f'File exists: {filename}\nUse clobber=True to overwrite')
+                print(f'File exists: {filename}\n  --- Use clobber=True to overwrite')
                 skip_cnt += 1
                 continue
 
