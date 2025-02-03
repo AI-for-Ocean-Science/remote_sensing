@@ -8,11 +8,14 @@ from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 
 
 def plot_rs_hp(rs_hp, tricontour=False, 
-               lbl=None, figsize=(12,8), 
+               cb_lbl=None, figsize=(12,8), 
                vmin:float=None, vmax:float=None,
                projection:str=None,
                ssize:float=1.,
-               color='viridis', show=False):
+               cb_lsize:float=15.,
+               cb_tsize:float=13.,
+               color='viridis', show=False,
+               ax=None):
     """Generate a global map of mean LL of the input
     cutouts
     Args:
@@ -33,8 +36,9 @@ def plot_rs_hp(rs_hp, tricontour=False,
     hp_lats = rs_hp.lats
     
     # Figure
-    fig = plt.figure(figsize=figsize)
-    plt.clf()
+    if ax is None:
+        fig = plt.figure(figsize=figsize)
+        plt.clf()
 
     tformM = ccrs.Mollweide()
     tformP = ccrs.PlateCarree()
@@ -48,7 +52,8 @@ def plot_rs_hp(rs_hp, tricontour=False,
     else:
         raise ValueError(f"Bad projection: {projection}")
 
-    ax = plt.axes(projection=tform)
+    if ax is None:
+        ax = plt.axes(projection=tform)
 
     if tricontour:
         cm = plt.get_cmap(color)
@@ -59,7 +64,7 @@ def plot_rs_hp(rs_hp, tricontour=False,
         cm = plt.get_cmap(color)
         # Cut
         good = np.invert(hp_values.mask)
-        img = plt.scatter(x=hp_lons[good],
+        img = ax.scatter(x=hp_lons[good],
             y=hp_lats[good],
             c=hp_values[good], 
             vmin=vmin, vmax=vmax,
@@ -69,10 +74,9 @@ def plot_rs_hp(rs_hp, tricontour=False,
 
     # Colorbar
     cb = plt.colorbar(img, orientation='horizontal', pad=0.)
-    if lbl is not None:
-        clbl = 'mean_LL'
-        cb.set_label(clbl, fontsize=20.)
-    cb.ax.tick_params(labelsize=17)
+    if cb_lbl is not None:
+        cb.set_label(cb_lbl, fontsize=cb_lsize)
+    cb.ax.tick_params(labelsize=cb_tsize)
 
     # Coast lines
     if not tricontour:
