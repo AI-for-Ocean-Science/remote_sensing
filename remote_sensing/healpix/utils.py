@@ -70,3 +70,97 @@ def get_nside_from_dataset(ds:xarray.Dataset):
 
     # nside
     return get_nside_from_angular_size(delta_lat)
+
+
+
+def evals_to_healpix(ds:xarray.Dataset,
+                     stat:str='mean'):
+    """
+    Generate a healpix map of where the input
+    MHW Systems are located on the globe
+
+    Parameters
+    ----------
+    ds : xa.Dataset
+    stat : str, optional
+        Statistic to calculate. Default is 'mean'
+    
+    Returns
+    -------
+    healpix_array : hp.ma (number of items contributing)
+    healpix_array : hp.ma1 (combined statistic)
+    lats : np.ndarray
+    lons : np.ndarray
+    """
+    # Unpack
+    if ds.lat.ndim == 2:
+        lats = ds.lat.values
+        lons = ds.lon.values
+    elif ds.lat.ndim == 1:
+        # Convert to 2D
+        lons, lats = np.meshgrid(ds.lon.values, ds.lat.values)
+    else:
+        raise ValueError("Bad lat/lon shape")
+    
+    vals = ds.data
+
+    # Healpix coords
+    theta = (90 - lats) * np.pi / 180. 
+    phi = lons * np.pi / 180.
+    nside, _ = get_nside_from_dataset(ds)
+    idx_all = hp.pixelfunc.ang2pix(nside, theta, phi)
+
+    # Count events
+    npix_hp = hp.nside2npix(nside)
+    all_events = np.ma.masked_array(np.zeros(npix_hp, dtype='int'))
+    all_values = np.ma.masked_array(np.zeros(npix_hp))
+
+    for i, idx in enumerate(idx_all):
+        all_events[idx] += 1
+        # Prep for mean
+        if stat == 'mean':
+            all_values[idx] += vals[i]
+        # For the median, save lists instead
+
+    zero = all_events == 0
+    
+    # Recast + combine
+    float_events = all_events.astype(float)
+    float_values = all_values.astype(float)
+
+    if stat == 'mean':
+        float_values[~zero] = all_values[~zero]/all_events[~zero]
+    elif stat == 'median':
+        raise NotImplementedError("Need to implement")
+
+        # Calculate median values
+        idx_arr = np.sort(idx_all)
+        pixels = np.unique(idx_arr)
+
+        for pixel in pixels: 
+        
+            # find where which cutouts to put in that pixel
+            where = np.where(pixel == idx_arr)
+            first = where[0][0]
+            last = where[0][-1]
+            indices = idx_arr[first:last + 1].index
+        
+            # evaluate the median LL value for that pixel 
+            vals = eval_tbl.iloc[indices.to_numpy()].LL.to_numpy()
+        
+            med_values[pixel] = np.median( vals )
+    else: 
+        raise ValueError(f"Bad stat: {stat}")
+
+
+    # Mask
+    hpma = hp.ma(float_events)
+    hpma1 = hp.ma(float_values)
+    hpma.mask = zero # current mask set to zero array, where Trues (no events) are masked
+    hpma1.mask = zero 
+
+    # Angles (convenient)
+    hp_lons, hp_lats = hp.pixelfunc.pix2ang(nside, np.arange(npix_hp), lonlat=True)
+
+    # Return
+    return hpma, hpma1, hp_lons, hp_lats, nside
