@@ -2,6 +2,7 @@
 for Remote Sensing. """
 
 from importlib import reload
+import os
 
 import numpy as np
 import healpy as hp
@@ -27,6 +28,10 @@ class RS_Healpix(object):
         self.lats = None
         self.counts = None
 
+        # File?
+        self.filename = None
+        self.variable = None
+
     @property
     def pix_resol(self):
         """ Return the pixel size in degrees. """
@@ -37,6 +42,50 @@ class RS_Healpix(object):
         """ Return the pixel area in square degrees. """
         return hp.nside2pixarea(self.nside, degrees=True)
 
+    @classmethod
+    def from_dataarray_file(cls, filename:str, variable:str, 
+                            lat_slice:slice=None, 
+                            lon_slice:slice=None,
+                            time_isel:int=None):
+        """
+        Initialize the RS_Healpix object from a dataarray file.
+
+        Parameters
+        ----------
+        filename : str
+            Filename of the dataarray file
+        variable : str
+            Variable to extract from the dataarray
+        lat_slice : slice, optional
+            Slice to apply to the latitude dimension
+        lon_slice : slice, optional
+            Slice to apply to the longitude dimension
+
+        Returns
+        -------
+        RS_Healpix
+
+        """
+        ds = xarray.open_dataset(filename)
+        if lat_slice is not None:
+            ds = ds.sel(lat=lat_slice)
+        if lon_slice is not None:
+            ds = ds.sel(lon=lon_slice)
+        # Time slice
+        if time_isel is not None:
+            ds = ds.isel(time=time_isel)
+
+        # Instantiate
+        rsh =  cls.from_dataset(ds[variable])
+
+        # Fill in
+        rsh.filename = filename
+        rsh.variable = variable
+
+        # Return
+        return rsh
+
+        
     @classmethod
     def from_dataset(cls, ds:xarray.Dataset):
         """
@@ -67,3 +116,13 @@ class RS_Healpix(object):
 
         # Return
         return rsh
+
+    def __repr__(self):
+        rstr = f'<RS_Healpix: nside={self.nside}, npix={self.npix}'
+        if self.filename is not None:
+            rstr = f'{rstr}\n file={os.path.basename(self.filename)}'
+        if self.variable is not None:
+            rstr = f'{rstr}, var="{self.variable}"'
+        rstr = f'{rstr}>'
+        # Return
+        return rstr

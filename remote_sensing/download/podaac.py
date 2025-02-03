@@ -154,9 +154,11 @@ def download_files(file_list:list,
 
     Returns
     --------
-    None
+    list : List of local files that were successfully downloaded.
 
     """
+    local_files = [None]*len(file_list)
+
     # Authenicate with Earthdata Login
     pa.setup_earthdata_login_auth(pa.edl)
     token = pa.get_token(pa.token_url)
@@ -169,7 +171,7 @@ def download_files(file_list:list,
 
     # Loop on files
     success_cnt = failure_cnt = skip_cnt = 0
-    for f in file_list:
+    for ss, f in enumerate(file_list):
 
         # Parse filename
         fparse = f.split('/')
@@ -194,16 +196,25 @@ def download_files(file_list:list,
             
             # decide if we should actually download this file (e.g. we may already have the latest version)
             if os.path.isfile(output_path) and not clobber:# and pa.checksum_does_match(output_path, checksums)):
-                print(f'File exists: {filename}\n  --- Use clobber=True to overwrite')
+                if verbose:
+                    print(f'File exists: {filename}\n  --- Use clobber=True to overwrite')
                 skip_cnt += 1
+                local_files[ss] = output_path
                 continue
 
             pa.download_file(f,output_path)
             success_cnt = success_cnt + 1
+            local_files[ss] = output_path
 
             # Success
-            print(f'File downloaded: {output_path}')
+            if verbose:
+                print(f'File downloaded: {output_path}')
 
         except Exception:
             print(f'File failed to download: {filename}.') 
             failure_cnt = failure_cnt + 1
+
+    print(f"Downloaded {success_cnt} files, failed on {failure_cnt} files, skipped {skip_cnt} existing files.")
+
+    # Return
+    return local_files
