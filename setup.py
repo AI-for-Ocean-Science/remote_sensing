@@ -25,7 +25,7 @@ setup_keywords['install_requires'] = [
     'cftime', 'bokeh', 'xarray', 'h5netcdf', 
     'healpy',
     'importlib-metadata', 'podaac-data-subscriber',
-    'pytest']
+    'pytest', 'simplekml']
 setup_keywords['zip_safe'] = False
 setup_keywords['use_2to3'] = False
 setup_keywords['packages'] = find_packages()

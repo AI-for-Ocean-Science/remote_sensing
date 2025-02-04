@@ -16,7 +16,7 @@ def plot_rs_hp(rs_hp, tricontour=False,
                cb_tsize:float=12.,
                cmap='viridis', show=False,
                xlim:tuple=None, ylim:tuple=None,
-               ax=None):
+               ax=None, savefig:str=None):
     """Generate a global map of mean LL of the input
     cutouts
     Args:
@@ -28,6 +28,7 @@ def plot_rs_hp(rs_hp, tricontour=False,
         vmin (float, optional): [description]. Defaults to None.
         vmax (float, optional): [description]. Defaults to None.
         show (bool, optional): If True, show on the screen.  Defaults to True
+        savefig (str, optional): If not None, save the figure to this file.  Defaults to None
     Returns:
         matplotlib.Axis: axis holding the plot
     """
@@ -101,6 +102,12 @@ def plot_rs_hp(rs_hp, tricontour=False,
         ax.set_xlim(xlim)
     if ylim is not None:
         ax.set_ylim(ylim)
+
+    plt.tight_layout()
+
+    # Save?
+    if savefig is not None:
+        plt.savefig(savefig, bbox_inches='tight', dpi=300)
 
     # Layout and save
     if show:
