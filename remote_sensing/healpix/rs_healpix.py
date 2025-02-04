@@ -10,6 +10,7 @@ import xarray
 
 from remote_sensing.healpix import utils as hp_utils 
 from remote_sensing.healpix import plotting as hp_plotting
+from remote_sensing.healpix import combine as hp_combine
 from remote_sensing import units
 
 from IPython import embed
@@ -45,6 +46,53 @@ class RS_Healpix(object):
     def pix_area(self):
         """ Return the pixel area in square degrees. """
         return hp.nside2pixarea(self.nside, degrees=True)
+
+    @property
+    def basename(self):
+        """ Return the pixel area in square degrees. """
+        if self.filename is not None:
+            return os.path.basename(self.filename)
+
+    @classmethod
+    def from_list(cls, rs_list:list):
+        """
+        Initialize the RS_Healpix object from a list of RS_Healpix objects.
+
+        Parameters
+        ----------
+        rs_list : list
+            List of RS_Healpix objects to average
+
+        Returns
+        -------
+        RS_Healpix
+
+        """
+        # Check
+        nside = rs_list[0].nside
+        for rs in rs_list:
+            if rs.nside != nside:
+                raise ValueError("All RS_Healpix objects must have the same NSIDE")
+                
+        # Average
+        hp_values = hp_combine.average_masked_arrays([rs.hp for rs in rs_list])
+        hp_lons = rs_list[0].lons
+        hp_lats = rs_list[0].lats
+
+        # Instantiate
+        rsh = RS_Healpix(nside)
+        rsh.hp = hp_values
+        rsh.lons = hp_lons
+        rsh.lats = hp_lats
+
+        # A bit more
+        if rs_list[0].filename is not None:
+            rsh.filename = f'Avg[{rs_list[0].basename}-{rs_list[-1].basename}]'
+        if rs_list[0].variable is not None:
+            rsh.variable = rs_list[0].variable
+
+        # Return
+        return rsh
 
     @classmethod
     def from_dataset_file(cls, filename:str, variable:str, 
@@ -163,7 +211,7 @@ class RS_Healpix(object):
     def __repr__(self):
         rstr = f'<RS_Healpix: nside={self.nside}, resol={self.pix_resol}deg'
         if self.filename is not None:
-            rstr = f'{rstr}\n file={os.path.basename(self.filename)}'
+            rstr = f'{rstr}\n file={self.basename}'
         if self.variable is not None:
             rstr = f'{rstr}, var="{self.variable}"'
         rstr = f'{rstr}>'

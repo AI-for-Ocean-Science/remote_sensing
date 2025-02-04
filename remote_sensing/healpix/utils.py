@@ -161,8 +161,8 @@ def da_to_healpix(da:xarray.DataArray,
             raise ValueError(f"Bad stat: {stat}")
 
 
-    # Mask 
-
+    # HP Mask 
+    # Yes, the counts need to be a float (for now)
     hpma = hp.ma(all_events.astype(float))
     hpma1 = hp.ma(all_values)
 
