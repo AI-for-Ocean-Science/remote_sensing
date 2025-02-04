@@ -12,9 +12,9 @@ def plot_rs_hp(rs_hp, tricontour=False,
                vmin:float=None, vmax:float=None,
                projection:str='mollweide',
                ssize:float=1.,
-               cb_lsize:float=15.,
-               cb_tsize:float=13.,
-               color='viridis', show=False,
+               cb_lsize:float=14.,
+               cb_tsize:float=12.,
+               cmap='viridis', show=False,
                xlim:tuple=None, ylim:tuple=None,
                ax=None):
     """Generate a global map of mean LL of the input
@@ -24,7 +24,7 @@ def plot_rs_hp(rs_hp, tricontour=False,
         tricontour (bool, optional): [description]. Defaults to False.
         lbl ([type], optional): [description]. Defaults to None.
         figsize (tuple, optional): [description]. Defaults to (12,8).
-        color (str, optional): [description]. Defaults to 'Reds'.
+        cmap (str, optional): [description]. Defaults to 'Reds'.
         vmin (float, optional): [description]. Defaults to None.
         vmax (float, optional): [description]. Defaults to None.
         show (bool, optional): If True, show on the screen.  Defaults to True
@@ -55,12 +55,12 @@ def plot_rs_hp(rs_hp, tricontour=False,
         ax = plt.axes(projection=tform)
 
     if tricontour:
-        cm = plt.get_cmap(color)
+        cm = plt.get_cmap(cmap)
         img = ax.tricontourf(hp_lons, hp_lats, hp_values, 
                              transform=tform,
                          levels=20, cmap=cm)#, zorder=10)
     else:
-        cm = plt.get_cmap(color)
+        cm = plt.get_cmap(cmap)
         # Cut
         good = np.invert(hp_values.mask)
         img = ax.scatter(x=hp_lons[good],

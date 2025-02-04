@@ -10,6 +10,7 @@ import xarray
 
 from remote_sensing.healpix import utils as hp_utils 
 from remote_sensing.healpix import plotting as hp_plotting
+from remote_sensing import units
 
 from IPython import embed
 
@@ -104,7 +105,11 @@ class RS_Healpix(object):
             ds = ds.isel(time=time_isel)
 
         # Instantiate
-        rsh =  cls.from_dataarray(ds[variable], nside=nside)
+        # If SST, convert to Celsius
+        da = ds[variable]
+        if da.units == 'K':
+            da = units.kelvin_to_celsius(da)
+        rsh =  cls.from_dataarray(da, nside=nside)
 
         # Fill in
         rsh.filename = filename
@@ -132,6 +137,8 @@ class RS_Healpix(object):
 
         """
         reload(hp_utils)
+
+        
         hp_counts, hp_values, hp_lons, hp_lats, nside = \
             hp_utils.da_to_healpix(da, nside=nside)
 
@@ -154,7 +161,7 @@ class RS_Healpix(object):
         
 
     def __repr__(self):
-        rstr = f'<RS_Healpix: nside={self.nside}, npix={self.npix}'
+        rstr = f'<RS_Healpix: nside={self.nside}, resol={self.pix_resol}deg'
         if self.filename is not None:
             rstr = f'{rstr}\n file={os.path.basename(self.filename)}'
         if self.variable is not None:
