@@ -176,7 +176,7 @@ def da_to_healpix(da:xarray.DataArray,
     # Return
     return hpma, hpma1, hp_lons, hp_lats, nside
 
-def masked_in_box(hp, box):
+def masked_in_box(hp:healpy.ma, box:tuple):
     """ Find which healpix pixels are masked
     in the box 
 

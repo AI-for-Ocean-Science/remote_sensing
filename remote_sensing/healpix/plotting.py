@@ -8,27 +8,39 @@ from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 
 
 def plot_rs_hp(rs_hp, tricontour=False, 
-               cb_lbl=None, figsize=(12,8), 
+               figsize=(12,8), 
                vmin:float=None, vmax:float=None,
                projection:str='mollweide',
                ssize:float=1.,
+               add_colorbar:bool=True,
+               cb_lbl=None, 
                cb_lsize:float=14.,
                cb_tsize:float=12.,
                cmap='viridis', show=False,
                xlim:tuple=None, ylim:tuple=None,
-               ax=None, savefig:str=None):
+               ax=None, savefig:str=None,
+               transparent:bool=True):
     """Generate a global map of mean LL of the input
     cutouts
     Args:
         rs_hp (RS_Healpix): RS_Healpix object
-        tricontour (bool, optional): [description]. Defaults to False.
-        lbl ([type], optional): [description]. Defaults to None.
-        figsize (tuple, optional): [description]. Defaults to (12,8).
-        cmap (str, optional): [description]. Defaults to 'Reds'.
-        vmin (float, optional): [description]. Defaults to None.
-        vmax (float, optional): [description]. Defaults to None.
-        show (bool, optional): If True, show on the screen.  Defaults to True
+        tricontour (bool, optional): Use tricontour.  Defaults to False.
+        figsize (tuple, optional): Size of the figure.  Defaults to (12,8).
+        vmin (float, optional): Minimum value for the color scale.  Defaults to None.
+        vmax (float, optional): Maximum value for the color scale.  Defaults to None.
+        projection (str, optional): Projection for the plot.  Defaults to 'mollweide'.
+        ssize (float, optional): Size of the points.  Defaults to 1..
+        add_colorbar (bool, optional): Add a colorbar.  Defaults to True.
+        cb_lbl ([type], optional): Label for the colorbar.  Defaults to None.
+        cb_lsize (float, optional): Label size for the colorbar.  Defaults to 14..
+        cb_tsize (float, optional): Tick size for the colorbar.  Defaults to 12..
+        cmap (str, optional): Colormap.  Defaults to 'viridis'.
+        show (bool, optional): Show the plot.  Defaults to False.
+        xlim (tuple, optional): x limits.  Defaults to None.
+        ylim (tuple, optional): y limits.  Defaults to None.
+        ax ([type], optional): Axis to use.  Defaults to None.
         savefig (str, optional): If not None, save the figure to this file.  Defaults to None
+        transparent (bool, optional): Make the background transparent.  Defaults to True.
     Returns:
         matplotlib.Axis: axis holding the plot
     """
@@ -73,10 +85,11 @@ def plot_rs_hp(rs_hp, tricontour=False,
             transform=tformP)
 
     # Colorbar
-    cb = plt.colorbar(img, orientation='horizontal', pad=0.)
-    if cb_lbl is not None:
-        cb.set_label(cb_lbl, fontsize=cb_lsize)
-    cb.ax.tick_params(labelsize=cb_tsize)
+    if add_colorbar:
+        cb = plt.colorbar(img, orientation='horizontal', pad=0.)
+        if cb_lbl is not None:
+            cb.set_label(cb_lbl, fontsize=cb_lsize)
+        cb.ax.tick_params(labelsize=cb_tsize)
 
     # Coast lines
     if not tricontour:
@@ -107,10 +120,11 @@ def plot_rs_hp(rs_hp, tricontour=False,
 
     # Save?
     if savefig is not None:
-        plt.savefig(savefig, bbox_inches='tight', dpi=300)
+        plt.savefig(savefig, bbox_inches='tight', dpi=300,
+                    transparent=transparent)
 
     # Layout and save
     if show:
         plt.show()
 
-    return ax
+    return ax, img

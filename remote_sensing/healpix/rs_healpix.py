@@ -5,7 +5,7 @@ from importlib import reload
 import os
 
 import numpy as np
-import healpy as hp
+import healpy
 import xarray
 
 from remote_sensing.healpix import utils as hp_utils 
@@ -26,7 +26,7 @@ class RS_Healpix(object):
             HEALPix NSIDE parameter (must be a power of 2)
         """
         self.nside = nside
-        self.npix = hp.nside2npix(nside)
+        self.npix = healpy.nside2npix(nside)
 
         self.hp = None
         self.counts = None
@@ -38,7 +38,7 @@ class RS_Healpix(object):
     @property
     def lons_lats(self):
         """ Return the lats and lons. """
-        return hp.pixelfunc.pix2ang(
+        return healpy.pixelfunc.pix2ang(
             self.nside, np.arange(self.npix), lonlat=True)
 
     @property
@@ -55,12 +55,12 @@ class RS_Healpix(object):
     @property
     def pix_resol(self):
         """ Return the pixel size in degrees. """
-        return hp.nside2resol(self.nside, arcmin=True) / 60.
+        return healpy.nside2resol(self.nside, arcmin=True) / 60.
 
     @property
     def pix_area(self):
         """ Return the pixel area in square degrees. """
-        return hp.nside2pixarea(self.nside, degrees=True)
+        return healpy.nside2pixarea(self.nside, degrees=True)
 
     @property
     def basename(self):
@@ -211,10 +211,38 @@ class RS_Healpix(object):
         # Return
         return rsh
 
+    def fill_in(self, rs_hp:RS_Healpix, bbox:tuple):
+        """
+        Fill in the RS_Healpix object from another RS_Healpix object.
+
+        Parameters
+        ----------
+        rs_hp : RS_Healpix
+            Object containing the HEALPix data
+        bbox : tuple
+            Bounding box to fill in
+            (lon_min, lon_max, lat_min, lat_max)
+
+        """
+        # Find the missing healpixels
+        missing = hp_utils.masked_in_box(self.hp, bbox)
+        miss_lats = self.lats[missing]
+        miss_lons = self.lons[missing]
+
+        # Interpolate
+        missing_values = healpy.pixelfunc.get_interp_val(
+            rs_hp.hp, miss_lons, miss_lats, lonlat=True)
+
+        # Fill in
+        self.hp.data[missing] = missing_values
+        self.hp.mask[missing] = False
+
+        print("Filled in {:d} pixels".format(np.sum(missing)))
+        
     def plot(self, **kwargs):
         """ Plot the HEALPix map. """
         reload(hp_plotting)
-        hp_plotting.plot_rs_hp(self, **kwargs)
+        return hp_plotting.plot_rs_hp(self, **kwargs)
         
 
     def __repr__(self):
