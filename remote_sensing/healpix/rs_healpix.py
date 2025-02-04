@@ -13,6 +13,8 @@ from remote_sensing.healpix import plotting as hp_plotting
 from remote_sensing.healpix import combine as hp_combine
 from remote_sensing import units
 
+from remote_sensing.download import sst
+
 from IPython import embed
 
 class RS_Healpix(object):
@@ -163,9 +165,15 @@ class RS_Healpix(object):
         if time_isel is not None:
             ds = ds.isel(time=time_isel)
 
+        # Quality control
+        da = ds[variable]
+        # TODO -- add other fields
+        junk = sst.quality_control(ds)
+        if junk is not None:
+            da.data[junk] = np.nan
+
         # Instantiate
         # If SST, convert to Celsius
-        da = ds[variable]
         if da.units in ['K', 'kelvin', 'Kelvin']:
             da = units.kelvin_to_celsius(da)
         rsh =  cls.from_dataarray(da, nside=nside)
@@ -211,7 +219,7 @@ class RS_Healpix(object):
         # Return
         return rsh
 
-    def fill_in(self, rs_hp:RS_Healpix, bbox:tuple):
+    def fill_in(self, rs_hp, bbox:tuple):
         """
         Fill in the RS_Healpix object from another RS_Healpix object.
 
