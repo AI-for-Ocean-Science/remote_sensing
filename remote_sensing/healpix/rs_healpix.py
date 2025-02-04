@@ -29,13 +29,28 @@ class RS_Healpix(object):
         self.npix = hp.nside2npix(nside)
 
         self.hp = None
-        self.lons = None
-        self.lats = None
         self.counts = None
 
         # File?
         self.filename = None
         self.variable = None
+    
+    @property
+    def lons_lats(self):
+        """ Return the lats and lons. """
+        return hp.pixelfunc.pix2ang(
+            self.nside, np.arange(self.npix), lonlat=True)
+
+    @property
+    def lats(self):
+        """ Return the longitudes. """
+        return self.lons_lats[1]
+
+    @property
+    def lons(self):
+        """ Return the longitudes. """
+        return self.lons_lats[0]
+
 
     @property
     def pix_resol(self):
@@ -76,14 +91,10 @@ class RS_Healpix(object):
                 
         # Average
         hp_values = hp_combine.average_masked_arrays([rs.hp for rs in rs_list])
-        hp_lons = rs_list[0].lons
-        hp_lats = rs_list[0].lats
 
         # Instantiate
         rsh = RS_Healpix(nside)
         rsh.hp = hp_values
-        rsh.lons = hp_lons
-        rsh.lats = hp_lats
 
         # A bit more
         if rs_list[0].filename is not None:
@@ -155,7 +166,7 @@ class RS_Healpix(object):
         # Instantiate
         # If SST, convert to Celsius
         da = ds[variable]
-        if da.units == 'K':
+        if da.units in ['K', 'kelvin', 'Kelvin']:
             da = units.kelvin_to_celsius(da)
         rsh =  cls.from_dataarray(da, nside=nside)
 
@@ -195,8 +206,6 @@ class RS_Healpix(object):
 
         # Fill
         rsh.hp = hp_values
-        rsh.lons = hp_lons
-        rsh.lats = hp_lats
         rsh.counts = hp_counts
 
         # Return

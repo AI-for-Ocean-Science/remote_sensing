@@ -1,7 +1,7 @@
 """ Utility functions for working with HEALPix data. """
 
 
-import healpy as hp
+import healpy
 import numpy as np
 
 import xarray
@@ -39,7 +39,7 @@ def get_nside_from_angular_size(angular_size_deg):
     nside = 2**(np.ceil(np.log2(nside_exact))-1)
     
     # Calculate actual pixel size for this NSIDE
-    pixel_area_rad = hp.nside2pixarea(int(nside))
+    pixel_area_rad = healpy.nside2pixarea(int(nside))
     actual_pixel_size_deg = np.rad2deg(np.sqrt(pixel_area_rad))
     
     return int(nside), actual_pixel_size_deg
@@ -93,8 +93,8 @@ def da_to_healpix(da:xarray.DataArray,
     
     Returns
     -------
-    healpix_array : hp.ma (number of items contributing)
-    healpix_array : hp.ma1 (combined statistic)
+    healpix_array : healpy.ma (number of items contributing)
+    healpix_array : healpy.ma1 (combined statistic)
     lats : np.ndarray
     lons : np.ndarray
     """
@@ -114,7 +114,7 @@ def da_to_healpix(da:xarray.DataArray,
     # Pixels
     if nside is None:
         nside, _ = get_nside_from_dataset(da)
-    npix_hp = hp.nside2npix(nside)
+    npix_hp = healpy.nside2npix(nside)
     
     # Deal with NaNs
     vals = da.data.flatten()
@@ -129,7 +129,7 @@ def da_to_healpix(da:xarray.DataArray,
 
     gd = np.isfinite(lats) & np.isfinite(lons)
 
-    idx_all[gd] = hp.pixelfunc.ang2pix(
+    idx_all[gd] = healpy.pixelfunc.ang2pix(
         nside, theta[gd], phi[gd])
 
     # Count events
@@ -163,15 +163,45 @@ def da_to_healpix(da:xarray.DataArray,
 
     # HP Mask 
     # Yes, the counts need to be a float (for now)
-    hpma = hp.ma(all_events.astype(float))
-    hpma1 = hp.ma(all_values)
+    hpma = healpy.ma(all_events.astype(float))
+    hpma1 = healpy.ma(all_values)
 
     zero = all_events == 0 
     hpma.mask = zero # current mask set to zero array, where Trues (no events) are masked
     hpma1.mask = zero 
 
     # Angles (convenient)
-    hp_lons, hp_lats = hp.pixelfunc.pix2ang(nside, np.arange(npix_hp), lonlat=True)
+    hp_lons, hp_lats = healpy.pixelfunc.pix2ang(nside, np.arange(npix_hp), lonlat=True)
 
     # Return
     return hpma, hpma1, hp_lons, hp_lats, nside
+
+def masked_in_box(hp, box):
+    """ Find which healpix pixels are masked
+    in the box 
+
+    Args:
+        hp (healpy.ma): healpix masked array
+        box (list): bounding box of the form
+            [lon_min, lon_max, lat_min, lat_max]
+
+    
+    """
+    nside = healpy.npix2nside(hp.size)
+    lons, lats = healpy.pix2ang(nside, np.arange(hp.size), lonlat=True)
+
+    # In box?
+    gd_lats = (lats > box[2]) & (lats < box[3])
+    if box[0] < box[1]:
+        gd_lons = (lons > box[0]) & (lons < box[1])
+    else:
+        gd_lons = (lons > box[0]) | (lons < box[1])
+    in_box = gd_lats & gd_lons
+
+    # Masked?
+    masked = hp.mask & in_box
+
+    # Done
+    return np.where(masked)[0]
+
+    
