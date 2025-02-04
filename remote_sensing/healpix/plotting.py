@@ -16,6 +16,8 @@ def plot_rs_hp(rs_hp, tricontour=False,
                cb_lbl=None, 
                cb_lsize:float=14.,
                cb_tsize:float=12.,
+               dpi:int=300,
+               marker:str=None,
                cmap='viridis', show=False,
                xlim:tuple=None, ylim:tuple=None,
                ax=None, savefig:str=None,
@@ -80,6 +82,7 @@ def plot_rs_hp(rs_hp, tricontour=False,
             y=hp_lats[good],
             c=hp_values[good], 
             vmin=vmin, vmax=vmax,
+            marker=marker,
             cmap=cm,
             s=ssize,
             transform=tformP)
@@ -120,7 +123,7 @@ def plot_rs_hp(rs_hp, tricontour=False,
 
     # Save?
     if savefig is not None:
-        plt.savefig(savefig, bbox_inches='tight', dpi=300,
+        plt.savefig(savefig, bbox_inches='tight', dpi=dpi,
                     transparent=transparent)
 
     # Layout and save
