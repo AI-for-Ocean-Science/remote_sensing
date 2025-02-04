@@ -9,6 +9,9 @@ import healpy as hp
 import xarray
 
 from remote_sensing.healpix import utils as hp_utils 
+from remote_sensing.healpix import plotting as hp_plotting
+
+from IPython import embed
 
 class RS_Healpix(object):
 
@@ -43,17 +46,18 @@ class RS_Healpix(object):
         return hp.nside2pixarea(self.nside, degrees=True)
 
     @classmethod
-    def from_dataarray_file(cls, filename:str, variable:str, 
+    def from_dataset_file(cls, filename:str, variable:str, 
                             lat_slice:slice=None, 
                             lon_slice:slice=None,
-                            time_isel:int=None):
+                            time_isel:int=None,
+                            resol_km:float=None):
         """
         Initialize the RS_Healpix object from a dataarray file.
 
         Parameters
         ----------
         filename : str
-            Filename of the dataarray file
+            Filename of the dataset file
         variable : str
             Variable to extract from the dataarray
         lat_slice : slice, optional
@@ -66,17 +70,41 @@ class RS_Healpix(object):
         RS_Healpix
 
         """
+        nside = None
         ds = xarray.open_dataset(filename)
-        if lat_slice is not None:
-            ds = ds.sel(lat=lat_slice)
-        if lon_slice is not None:
-            ds = ds.sel(lon=lon_slice)
+        if ds.lat.ndim == 1:
+            if lat_slice is not None:
+                ds = ds.sel(lat=lat_slice)
+            if lon_slice is not None:
+                ds = ds.sel(lon=lon_slice)
+        if ds.lat.ndim == 2:
+            # Deal with junk
+            junk = ds.lat < -1000.
+            ds.lat.data[junk] = np.nan
+            #
+            junk = ds.lon < -1000.
+            ds.lon.data[junk] = np.nan
+
+            # Cut with NaNs
+            if lat_slice is not None:
+                junk = (ds.lat < lat_slice[0]) | (ds.lat > lat_slice[1])
+                ds.lat.data[junk] = np.nan
+            if lon_slice is not None:
+                junk = (ds.lon < lon_slice[0]) | (ds.lon > lon_slice[1])
+                ds.lon.data[junk] = np.nan
+            # nside 
+            if resol_km is None:
+                raise ValueError("Must provide resol_km for 2D lat/lon arrays")
+            # Translate to deg
+            delta_lat = resol_km / 111.1
+            nside, _ = hp_utils.get_nside_from_angular_size(delta_lat)
+        
         # Time slice
         if time_isel is not None:
             ds = ds.isel(time=time_isel)
 
         # Instantiate
-        rsh =  cls.from_dataset(ds[variable])
+        rsh =  cls.from_dataarray(ds[variable], nside=nside)
 
         # Fill in
         rsh.filename = filename
@@ -87,14 +115,16 @@ class RS_Healpix(object):
 
         
     @classmethod
-    def from_dataset(cls, ds:xarray.Dataset):
+    def from_dataarray(cls, da:xarray.DataArray,
+                       nside:int=None):
         """
         Initialize the RS_Healpix object from an xarray dataset.
 
         Parameters
         ----------
-        ds : xarray.Dataset
+        da : xarray.DataArray
             Dataset containing the HEALPix data
+        nside : int, optional
 
         Returns
         -------
@@ -103,7 +133,7 @@ class RS_Healpix(object):
         """
         reload(hp_utils)
         hp_counts, hp_values, hp_lons, hp_lats, nside = \
-            hp_utils.evals_to_healpix(ds)
+            hp_utils.da_to_healpix(da, nside=nside)
 
         # Instantiate
         rsh = cls(nside)
@@ -116,6 +146,12 @@ class RS_Healpix(object):
 
         # Return
         return rsh
+
+    def plot(self, **kwargs):
+        """ Plot the HEALPix map. """
+        reload(hp_plotting)
+        hp_plotting.plot_rs_hp(self, **kwargs)
+        
 
     def __repr__(self):
         rstr = f'<RS_Healpix: nside={self.nside}, npix={self.npix}'

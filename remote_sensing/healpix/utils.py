@@ -6,6 +6,8 @@ import numpy as np
 
 import xarray
 
+from IPython import embed
+
 def get_nside_from_angular_size(angular_size_deg):
     """
     Find the appropriate HEALPix NSIDE parameter for a given angular size in degrees.
@@ -73,17 +75,21 @@ def get_nside_from_dataset(ds:xarray.Dataset):
 
 
 
-def evals_to_healpix(ds:xarray.Dataset,
-                     stat:str='mean'):
+def da_to_healpix(da:xarray.DataArray, 
+                  stat:str='mean',
+                  nside:int=None):
     """
     Generate a healpix map of where the input
     MHW Systems are located on the globe
 
     Parameters
     ----------
-    ds : xa.Dataset
+    da : xa.DataArray
     stat : str, optional
         Statistic to calculate. Default is 'mean'
+    nside : int, optional
+        HEALPix NSIDE parameter. Default is None
+        If None, the NSIDE is calculated from the input data
     
     Returns
     -------
@@ -93,34 +99,51 @@ def evals_to_healpix(ds:xarray.Dataset,
     lons : np.ndarray
     """
     # Unpack
-    if ds.lat.ndim == 2:
-        lats = ds.lat.values
-        lons = ds.lon.values
-    elif ds.lat.ndim == 1:
+    if da.lat.ndim == 2:
+        lats = da.lat.values
+        lons = da.lon.values
+    elif da.lat.ndim == 1:
         # Convert to 2D
-        lons, lats = np.meshgrid(ds.lon.values, ds.lat.values)
+        lons, lats = np.meshgrid(da.lon.values, da.lat.values)
     else:
         raise ValueError("Bad lat/lon shape")
+    # Flatten
+    lats = lats.flatten()
+    lons = lons.flatten()
+
+    # Pixels
+    if nside is None:
+        nside, _ = get_nside_from_dataset(da)
+    npix_hp = hp.nside2npix(nside)
     
     # Deal with NaNs
-    vals = ds.data
+    vals = da.data.flatten()
     finite = np.isfinite(vals)
+
+    # 
+    idx_all = np.zeros(vals.size, dtype='int') * -1
 
     # Healpix coords
     theta = (90 - lats) * np.pi / 180. 
     phi = lons * np.pi / 180.
-    nside, _ = get_nside_from_dataset(ds)
-    idx_all = hp.pixelfunc.ang2pix(nside, theta, phi)
+
+    gd = np.isfinite(lats) & np.isfinite(lons)
+
+    idx_all[gd] = hp.pixelfunc.ang2pix(
+        nside, theta[gd], phi[gd])
 
     # Count events
-    npix_hp = hp.nside2npix(nside)
     all_events = np.ma.masked_array(np.zeros(npix_hp, dtype='int'))
     all_values = np.ma.masked_array(np.zeros(npix_hp, dtype='float'))
 
     # Calculate median values
     pixels = np.unique(idx_all)
 
+    #embed(header='get_nside_from_dataset 142')
+
     for pixel in pixels:
+        if pixel == -1:
+            continue
     
         # find where which cutouts to put in that pixel
         mtch = (pixel == idx_all) & finite

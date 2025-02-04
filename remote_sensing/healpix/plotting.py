@@ -10,11 +10,12 @@ from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 def plot_rs_hp(rs_hp, tricontour=False, 
                cb_lbl=None, figsize=(12,8), 
                vmin:float=None, vmax:float=None,
-               projection:str=None,
+               projection:str='mollweide',
                ssize:float=1.,
                cb_lsize:float=15.,
                cb_tsize:float=13.,
                color='viridis', show=False,
+               xlim:tuple=None, ylim:tuple=None,
                ax=None):
     """Generate a global map of mean LL of the input
     cutouts
@@ -43,9 +44,7 @@ def plot_rs_hp(rs_hp, tricontour=False,
     tformM = ccrs.Mollweide()
     tformP = ccrs.PlateCarree()
 
-    if projection is None:
-        tform = None
-    elif projection == 'mollweide':
+    if projection == 'mollweide':
         tform = tformM
     elif projection == 'platecarree':
         tform = tformP
@@ -97,6 +96,11 @@ def plot_rs_hp(rs_hp, tricontour=False,
         #gl.xlocator = mticker.FixedLocator([-240., -180., -120, -65, -60, -55, 0, 60, 120.])
         #gl.ylocator = mticker.FixedLocator([0., 15., 30., 45, 60.])
 
+    # Limits
+    if xlim is not None:
+        ax.set_xlim(xlim)
+    if ylim is not None:
+        ax.set_ylim(ylim)
 
     # Layout and save
     if show:
