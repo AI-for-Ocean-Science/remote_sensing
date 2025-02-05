@@ -6,7 +6,7 @@ import numpy as np
 
 import xarray
 
-from remote_sensing import utils
+from remote_sensing.utils import utils
 
 from IPython import embed
 
@@ -100,6 +100,9 @@ def da_to_healpix(da:xarray.DataArray,
     lats : np.ndarray
     lons : np.ndarray
     """
+    if stat != 'mean':
+        raise IOError("stat != 'mean' not implemented yet")
+
     # Unpack
     if da.lat.ndim == 2:
         lats = da.lat.values
@@ -109,6 +112,7 @@ def da_to_healpix(da:xarray.DataArray,
         lons, lats = np.meshgrid(da.lon.values, da.lat.values)
     else:
         raise ValueError("Bad lat/lon shape")
+
     # Flatten
     lats = lats.flatten()
     lons = lons.flatten()
@@ -139,29 +143,21 @@ def da_to_healpix(da:xarray.DataArray,
     all_values = np.ma.masked_array(np.zeros(npix_hp, dtype='float'))
 
     # Calculate median values
-    pixels = np.unique(idx_all)
+    upixels = np.unique(idx_all)
+    upixels.sort()
 
-    embed(header='get_nside_from_dataset 142')
+    gdi = np.where(idx_all >= 0)[0]
 
-    for pixel in pixels:
-        if pixel == -1:
-            continue
-    
-        # find where which cutouts to put in that pixel
-        mtch = (pixel == idx_all) & finite
-        icount = np.sum(mtch) 
-
-        if icount == 0:
-            continue
-        all_events[pixel] = icount
-
-        if stat == 'mean':
-            all_values[pixel] = np.mean(vals[mtch])
-        elif stat == 'median':
-            all_values[pixel] = np.median(vals[mtch])
-        else:
-            raise ValueError(f"Bad stat: {stat}")
-
+    # Add em in
+    for ii in gdi:
+        jj = idx_all[ii]
+        # Count
+        all_events[jj] += 1
+        all_values[jj] += vals[ii]
+    #embed(header='155 of utils')
+    # Mean
+    pos = all_events > 0
+    all_values[pos] /= all_events[pos]
 
     # HP Mask 
     # Yes, the counts need to be a float (for now)

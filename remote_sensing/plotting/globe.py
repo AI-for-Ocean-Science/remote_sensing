@@ -6,8 +6,10 @@ from matplotlib import pyplot as plt
 import cartopy.crs as ccrs
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 
+from IPython import embed
 
-def plot_rs_hp(rs_hp, tricontour=False, 
+def plot_lons_lats_vals(lons, lats, values,
+                      tricontour=False, 
                figsize=(12,8), 
                vmin:float=None, vmax:float=None,
                projection:str='mollweide',
@@ -19,13 +21,15 @@ def plot_rs_hp(rs_hp, tricontour=False,
                dpi:int=300,
                marker:str=None,
                cmap='viridis', show=False,
-               xlim:tuple=None, ylim:tuple=None,
+               lon_lim:tuple=None, lat_lim:tuple=None,
                ax=None, savefig:str=None,
                transparent:bool=True):
     """Generate a global map of mean LL of the input
     cutouts
     Args:
-        rs_hp (RS_Healpix): RS_Healpix object
+        lons (np.ndarray): Longitudes
+        lats (np.ndarray): Latitudes
+        values (np.ndarray): Values to plot
         tricontour (bool, optional): Use tricontour.  Defaults to False.
         figsize (tuple, optional): Size of the figure.  Defaults to (12,8).
         vmin (float, optional): Minimum value for the color scale.  Defaults to None.
@@ -38,18 +42,16 @@ def plot_rs_hp(rs_hp, tricontour=False,
         cb_tsize (float, optional): Tick size for the colorbar.  Defaults to 12..
         cmap (str, optional): Colormap.  Defaults to 'viridis'.
         show (bool, optional): Show the plot.  Defaults to False.
-        xlim (tuple, optional): x limits.  Defaults to None.
-        ylim (tuple, optional): y limits.  Defaults to None.
+        lon_lim (tuple, optional): x limits.  Defaults to None.
+        lat_lim (tuple, optional): y limits.  Defaults to None.
         ax ([type], optional): Axis to use.  Defaults to None.
         savefig (str, optional): If not None, save the figure to this file.  Defaults to None
         transparent (bool, optional): Make the background transparent.  Defaults to True.
+
     Returns:
         matplotlib.Axis: axis holding the plot
+        matplotlib.image: image object
     """
-    # Unpack
-    hp_values = rs_hp.hp
-    hp_lons = rs_hp.lons
-    hp_lats = rs_hp.lats
     
     # Figure
     if ax is None:
@@ -71,16 +73,16 @@ def plot_rs_hp(rs_hp, tricontour=False,
 
     if tricontour:
         cm = plt.get_cmap(cmap)
-        img = ax.tricontourf(hp_lons, hp_lats, hp_values, 
+        img = ax.tricontourf(lons, lats, values, 
                              transform=tform,
                          levels=20, cmap=cm)#, zorder=10)
     else:
         cm = plt.get_cmap(cmap)
         # Cut
-        good = np.invert(hp_values.mask)
-        img = ax.scatter(x=hp_lons[good],
-            y=hp_lats[good],
-            c=hp_values[good], 
+        good = np.invert(values.mask)
+        img = ax.scatter(x=lons[good],
+            y=lats[good],
+            c=values[good], 
             vmin=vmin, vmax=vmax,
             marker=marker,
             cmap=cm,
@@ -114,10 +116,10 @@ def plot_rs_hp(rs_hp, tricontour=False,
         #gl.ylocator = mticker.FixedLocator([0., 15., 30., 45, 60.])
 
     # Limits
-    if xlim is not None:
-        ax.set_xlim(xlim)
-    if ylim is not None:
-        ax.set_ylim(ylim)
+    if lon_lim is not None:
+        ax.set_xlim(lon_lim)
+    if lat_lim is not None:
+        ax.set_ylim(lat_lim)
 
     plt.tight_layout()
 

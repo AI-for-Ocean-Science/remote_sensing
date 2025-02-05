@@ -23,7 +23,7 @@ setup_keywords['requires'] = ['Python (>3.10.0)']
 setup_keywords['install_requires'] = [
     'seaborn', 'pyarrow', 'scikit-learn', 'scikit-image', 'tqdm', 
     'cftime', 'bokeh', 'xarray', 'h5netcdf', 
-    'healpy',
+    'healpy', 'copernicusmarine',
     'importlib-metadata', 'podaac-data-subscriber',
     'pytest', 'simplekml']
 setup_keywords['zip_safe'] = False

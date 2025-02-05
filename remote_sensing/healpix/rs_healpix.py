@@ -9,11 +9,11 @@ import healpy
 import xarray
 
 from remote_sensing.healpix import utils as hp_utils 
-from remote_sensing.healpix import plotting as hp_plotting
+from remote_sensing.plotting import globe
 from remote_sensing.healpix import combine as hp_combine
 from remote_sensing import units
+from remote_sensing.netcdf import utils as nc_utils
 
-from remote_sensing.download import sst
 
 from IPython import embed
 
@@ -167,9 +167,7 @@ class RS_Healpix(object):
 
         # Quality control
         da = ds[variable]
-        # TODO -- add other fields
-        reload(sst)
-        junk = sst.quality_control(ds)
+        junk = nc_utils.gen_mask_for_dataset(ds, variable)
         if junk is not None:
             da.data[junk] = np.nan
 
@@ -250,8 +248,7 @@ class RS_Healpix(object):
         
     def plot(self, **kwargs):
         """ Plot the HEALPix map. """
-        reload(hp_plotting)
-        return hp_plotting.plot_rs_hp(self, **kwargs)
+        return globe.plot_lons_lats_vals(self.lons, self.lats, self.hp, **kwargs)
         
 
     def __repr__(self):
