@@ -6,6 +6,8 @@ import numpy as np
 
 import xarray
 
+from remote_sensing import utils
+
 from IPython import embed
 
 def get_nside_from_angular_size(angular_size_deg):
@@ -121,7 +123,7 @@ def da_to_healpix(da:xarray.DataArray,
     finite = np.isfinite(vals)
 
     # 
-    idx_all = np.zeros(vals.size, dtype='int') * -1
+    idx_all = np.zeros(vals.size, dtype='int') -1
 
     # Healpix coords
     theta = (90 - lats) * np.pi / 180. 
@@ -139,7 +141,7 @@ def da_to_healpix(da:xarray.DataArray,
     # Calculate median values
     pixels = np.unique(idx_all)
 
-    #embed(header='get_nside_from_dataset 142')
+    embed(header='get_nside_from_dataset 142')
 
     for pixel in pixels:
         if pixel == -1:

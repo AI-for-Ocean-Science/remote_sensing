@@ -168,6 +168,7 @@ class RS_Healpix(object):
         # Quality control
         da = ds[variable]
         # TODO -- add other fields
+        reload(sst)
         junk = sst.quality_control(ds)
         if junk is not None:
             da.data[junk] = np.nan
