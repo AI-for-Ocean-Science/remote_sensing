@@ -4,9 +4,8 @@
 PODAAC Downloads
 ****************
 
-This document describes
-calculations related to the
-Rotation Measure (RM) of FRBs.
+This document describes collections available from the
+Physical Oceanography Distributed Active Archive Center (PODAAC).
 
 Collections
 ===========

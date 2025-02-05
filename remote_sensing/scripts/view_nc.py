@@ -14,6 +14,8 @@ def parser(options=None):
     parser.add_argument("--lon_min", type=float, help="Minimum longitude")
     parser.add_argument("--lon_max", type=float, help="Maximum longitude")  
     parser.add_argument("--projection", type=str, default='mollweide', help="Projection for the plot; (mollweide, platecarree)")
+    parser.add_argument("--ssize", type=float, default=1., help="Size of the points")
+    parser.add_argument("--cmap", type=str, help="Color map")
 
     parser.add_argument("--itime", type=int, default=0, help="Time index to view, if applicable")
 
@@ -32,6 +34,7 @@ def main(pargs):
     import xarray
 
     from remote_sensing.plotting import globe
+    from remote_sensing.netcdf import utils as nc_utils
 
 
     # Load 
@@ -51,6 +54,12 @@ def main(pargs):
         raise IOError("Variable not found in the NetCDF file")
 
     da = ds[variable]
+
+    # Mask bad data
+    junk = nc_utils.gen_mask_for_dataset(ds, variable)
+    if junk is not None:
+        da.data[junk] = np.nan
+
     # Time?
     if 'time' in da.dims:
         da = da.isel(time=pargs.itime)
@@ -68,7 +77,7 @@ def main(pargs):
     # Masked array for the values
     vals = np.ma.array(da.values)
 
-    # Mask me
+    # Mask me more
     bad = np.isnan(vals)
     vals.mask = bad
 
@@ -91,6 +100,9 @@ def main(pargs):
     kwargs['lon_lim'] = lon_lim
     kwargs['lat_lim'] = lat_lim
     kwargs['projection'] = pargs.projection
+    kwargs['ssize'] = pargs.ssize
+    if pargs.cmap is not None:
+        kwargs['cmap'] = pargs.cmap
 
     # Plot
     ax, im = globe.plot_lons_lats_vals(lons, lats, vals, **kwargs)
