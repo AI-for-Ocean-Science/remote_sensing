@@ -232,7 +232,6 @@ class RS_Healpix(object):
             (lon_min, lon_max, lat_min, lat_max)
 
         """
-        embed(header='235 of rs_healpix')
         # Find the missing healpixels
         missing = hp_utils.masked_in_box(self.hp, bbox)
         miss_lats = self.lats[missing]
