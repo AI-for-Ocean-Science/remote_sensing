@@ -5,8 +5,10 @@ def quality_control(ds):
 
     bad = None
     if ds.attrs['sensor'] == 'AMSR2':
-        bad = ds.quality_level <= 2
+        bad = ds.quality_level < 2
     elif ds.attrs['sensor'] == 'VIIRS':
+        bad = ds.quality_level < 5
+    elif ds.attrs['sensor'] == 'AHI':
         bad = ds.quality_level < 5
 
     return bad

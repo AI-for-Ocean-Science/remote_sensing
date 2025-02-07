@@ -133,7 +133,7 @@ def da_to_healpix(da:xarray.DataArray,
     theta = (90 - lats) * np.pi / 180. 
     phi = lons * np.pi / 180.
 
-    gd = np.isfinite(lats) & np.isfinite(lons)
+    gd = np.isfinite(lats) & np.isfinite(lons) & finite
 
     idx_all[gd] = healpy.pixelfunc.ang2pix(
         nside, theta[gd], phi[gd])

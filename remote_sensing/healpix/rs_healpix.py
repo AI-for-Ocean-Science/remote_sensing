@@ -112,7 +112,8 @@ class RS_Healpix(object):
                             lat_slice:slice=None, 
                             lon_slice:slice=None,
                             time_isel:int=None,
-                            resol_km:float=None):
+                            resol_km:float=None,
+                            debug:bool=False):
         """
         Initialize the RS_Healpix object from a dataarray file.
 
@@ -231,6 +232,7 @@ class RS_Healpix(object):
             (lon_min, lon_max, lat_min, lat_max)
 
         """
+        embed(header='235 of rs_healpix')
         # Find the missing healpixels
         missing = hp_utils.masked_in_box(self.hp, bbox)
         miss_lats = self.lats[missing]
