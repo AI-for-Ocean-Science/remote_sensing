@@ -34,6 +34,7 @@ def show_one(one_file:str, pargs):
     from remote_sensing.plotting import globe
     from remote_sensing.plotting import utils as putils
     from remote_sensing.netcdf import utils as nc_utils
+    from remote_sensing.netcdf import sst as nc_sst
 
     # Load 
     ds = xarray.open_dataset(one_file)
@@ -44,6 +45,10 @@ def show_one(one_file:str, pargs):
         found_it = True
         variable = pargs.variable
     elif pargs.variable == 'sst':
+        variable = nc_sst.find_variable(ds, verbose=False)
+        if variable is not None:
+            found_it = True
+            
         for variable in ['sea_surface_temperature', 'analysed_sst']:
             if variable in ds.variables:
                 found_it = True
