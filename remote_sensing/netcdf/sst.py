@@ -68,6 +68,7 @@ def load(filename:str, verbose:bool=True):
     except:
         if verbose:
             print("Data is corrupt!")
+            import pdb; pdb.set_trace()
         return None, None, None, None
 
     ds.close()
