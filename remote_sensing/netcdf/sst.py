@@ -49,6 +49,10 @@ def load(filename:str, verbose:bool=True):
         engine='h5netcdf',
         mask_and_scale=True)
 
+    # Deal with time
+    if 'time' in ds.coords:
+        ds = ds.isel(time=0)
+
     # Find the variable
     variable = find_variable(ds, verbose=verbose)
     if variable is None:
@@ -61,7 +65,7 @@ def load(filename:str, verbose:bool=True):
     try:
         # Fails if data is corrupt
         sst = units.kelvin_to_celsius(da)
-        qual = ds.quality_level.data[0,...].astype(int)
+        qual = ds.quality_level.data[...].astype(int)
         #qual = ds.l2p_flags.data[0,...]
         latitude = ds.lat.data[:]
         longitude = ds.lon.data[:]
