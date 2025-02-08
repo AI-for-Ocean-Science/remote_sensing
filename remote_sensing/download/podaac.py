@@ -26,6 +26,7 @@ else:
 
 def grab_file_list(collection:str, 
                    time_range:tuple=None, 
+                   t_end:str=None,
                    dt_past:dict=None, 
                    bbox:str=None,
                    verbose:bool=True):
@@ -37,10 +38,13 @@ def grab_file_list(collection:str,
         time_range (tuple, optional): Start and end date in ISO format, 
             e.g. (2025-01-01T00:00:00Z, 2025-01-02T00:00:00Z).
             Defaults to None.
+        t_end (str, optional): Current time in ISO format.
+            If not provided, it will be set to the current time.
         dt_past (dict, optional): Time range in the past, which
             must be resolve by timedelta, e.g. dict(days=1).
             Defaults to None but will be set to 1 day if time_range is None
             and time_range is not specified.
+            Relative to t_now.
         bbox (str, optional): Bounding box in the format of
             "lon_min,lat_min,lon_max,lat_max" in deg 
             Defaults to None.
@@ -71,9 +75,15 @@ def grab_file_list(collection:str,
     if time_range is None:
         if dt_past is None:
             dt_past = dict(days=1)
-        start_date_time = datetime.now(timezone.utc) - timedelta(**dt_past)
+        if t_end is None:
+            t_end = now
+
+        # Convert t_start to datetime
+        dtend = datetime.strptime(t_end, "%Y-%m-%dT%H:%M:%SZ")
+    
+        start_date_time = dtend - timedelta(**dt_past)
         start_date_time = start_date_time.strftime("%Y-%m-%dT%H:%M:%SZ")
-        end_date_time = now
+        end_date_time = t_end
     else:
         start_date_time, end_date_time = time_range
 

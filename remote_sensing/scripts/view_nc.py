@@ -6,7 +6,7 @@ def parser(options=None):
     import argparse
     # Parse
     parser = argparse.ArgumentParser(description='View a variable in a NetCDF file')
-    parser.add_argument("netcdf_file", type=str, help="File+path to NetCDF file")
+    parser.add_argument("netcdf_file", type=str, help="File+path to NetCDF file.  If you use a wildcard, e.g. *.nc, all files will be shown, one by one")
     parser.add_argument("variable", type=str, help="Variable to view (or a 'shortcut', e.g. sst)")
     # Optional arguments
     parser.add_argument("--lat_min", type=float, help="Minimum latitude")
@@ -25,21 +25,20 @@ def parser(options=None):
         pargs = parser.parse_args(options)
     return pargs
 
+def show_one(one_file:str, pargs):
 
-def main(pargs):
-    """ Run
-    """
     import numpy as np
     from matplotlib import pyplot as plt
     import xarray
 
     from remote_sensing.plotting import globe
+    from remote_sensing.plotting import utils as putils
     from remote_sensing.netcdf import utils as nc_utils
 
-
     # Load 
-    ds = xarray.open_dataset(pargs.netcdf_file)
+    ds = xarray.open_dataset(one_file)
 
+    # Grab the variable
     found_it = False
     if pargs.variable in ds.variables:
         found_it = True
@@ -49,10 +48,8 @@ def main(pargs):
             if variable in ds.variables:
                 found_it = True
                 break
-
     if not found_it:
         raise IOError("Variable not found in the NetCDF file")
-
     da = ds[variable]
 
     # Mask bad data
@@ -66,11 +63,27 @@ def main(pargs):
 
     # Unpack
     if da.lat.ndim == 2:
+        # Going to Healpix
         lats = da.lat.values
         lons = da.lon.values
     elif da.lat.ndim == 1:
-        # Convert to 2D
-        lons, lats = np.meshgrid(da.lon.values, da.lat.values)
+        if da.lat[0] > da.lat[1]:
+            lat_slice = slice(pargs.lat_max, pargs.lat_min)
+        else:
+            lat_slice = slice(pargs.lat_min, pargs.lat_max)
+        lon_slice = slice(pargs.lon_min, pargs.lon_max)
+
+        # 
+        da = da.sel(lat=lat_slice, lon=lon_slice)
+        da.plot()
+        # Fuss
+        fig = plt.gcf()
+        fig.set_size_inches(15, 10)
+        ax = plt.gca()
+        putils.set_fontsize(ax, 18.)
+        plt.show()
+        # Finish
+        return
     else:
         raise ValueError("Bad lat/lon shape")
 
@@ -106,3 +119,16 @@ def main(pargs):
 
     # Plot
     ax, im = globe.plot_lons_lats_vals(lons, lats, vals, **kwargs)
+
+
+def main(pargs):
+    """ Run
+    """
+    import glob
+
+    # Grab em all
+    files = glob.glob(pargs.netcdf_file)
+    files.sort()
+
+    for one_file in files:
+        show_one(one_file, pargs)
