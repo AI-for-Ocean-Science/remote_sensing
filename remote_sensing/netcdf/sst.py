@@ -60,7 +60,7 @@ def load(filename:str, verbose:bool=True):
 
     try:
         # Fails if data is corrupt
-        sst = units(da)
+        sst = units.kelvin_to_celsius(da)
         qual = ds.quality_level.data[0,...].astype(int)
         #qual = ds.l2p_flags.data[0,...]
         latitude = ds.lat.data[:]
