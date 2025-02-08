@@ -1,4 +1,5 @@
 """ Methods for SST data download. """
+import numpy as np
 import xarray
 
 from remote_sensing import units 
@@ -41,7 +42,7 @@ def load(filename:str, verbose:bool=True):
         Quality
         Latitutides
         Longitudes
-        or None's if the data is corrupt!
+        or 4 None's if the data is corrupt!
     """
 
     ds = xarray.open_dataset(
