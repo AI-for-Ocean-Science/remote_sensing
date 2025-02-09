@@ -51,7 +51,8 @@ def load(filename:str, verbose:bool=True):
     ds = xarray.open_dataset(
         filename_or_obj=filename,
         engine='h5netcdf',
-        mask_and_scale=True)
+        mask_and_scale=True,
+        decode_timedelta=False)
 
     # Deal with time
     if 'time' in ds.coords:
