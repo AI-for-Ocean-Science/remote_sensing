@@ -1,6 +1,7 @@
 """ Methods for SST data download. """
 import numpy as np
 import xarray
+import pandas
 
 from remote_sensing import units 
 
@@ -33,11 +34,13 @@ def load(filename:str, verbose:bool=True):
     Parameters
     ----------
     filename : str
+        NetCDF file to load
+        It must include the time dimension
     verbose : bool, optional
 
     Returns
     -------
-    sst, qual, latitude, longitude : np.ndarray, np.ndarray, np.ndarray np.ndarray
+    sst, qual, latitude, longitude, time : np.ndarray, np.ndarray, np.ndarray np.ndarray, datetime.datetime
         Temperture map
         Quality
         Latitutides
@@ -52,7 +55,10 @@ def load(filename:str, verbose:bool=True):
 
     # Deal with time
     if 'time' in ds.coords:
+        time = pandas.to_datetime(ds.time.data[0])
         ds = ds.isel(time=0)
+    else:
+        raise IOError("No time coordinate found")
 
     # Find the variable
     variable = find_variable(ds, verbose=verbose)
@@ -79,7 +85,7 @@ def load(filename:str, verbose:bool=True):
     ds.close()
 
     # Return
-    return sst, qual, latitude, longitude
+    return sst, qual, latitude, longitude, time
 
 def quality_control(ds):
     """ Sensor / Product specific quality control. """
