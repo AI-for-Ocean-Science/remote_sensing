@@ -12,15 +12,20 @@ Remote Sensing |forks| |stars|
     :target: https://remote-sensing.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
 
-A Python package for processing and analyzing remote sensing data, with a focus on sea surface temperature (SST) data and HEALPix mapping.
+A Python package for processing and analyzing remote sensing data, 
+with a (current) focus on sea surface temperature (SST) data and HEALPix 
+mapping.
+
+The package is also designed for use in the field, e.g. in 
+support of active cruises.
 
 Features
 --------
 
-* HEALPix map processing and visualization
 * Sea Surface Temperature (SST) data handling
 * PODAAC data downloading interface
 * Global map visualization tools
+* HEALPix map processing and visualization
 * KML file generation for Google Earth
 * Comprehensive I/O utilities
 
