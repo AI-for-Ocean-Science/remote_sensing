@@ -37,6 +37,7 @@ Contents
    installation
    quickstart
    tutorials/index
+   scripts/index
 
 .. toctree::
    :maxdepth: 2
