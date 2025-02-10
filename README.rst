@@ -83,7 +83,7 @@ Create and visualize a HEALPix map:
 Requirements
 -----------
 
-* Python 3.8+
+* Python 3.11+
 * numpy
 * matplotlib
 * cartopy
@@ -121,12 +121,12 @@ This project is licensed under the MIT License - see the `LICENSE <LICENSE>`_ fi
 Authors
 -------
 
-* Your Name - *Initial work*
+* J. Xavier Prochaska - *Initial work*
 
 Contact
 -------
 
-* Email: your.email@example.com
+* Email: jxp@ucsc.edu
 * Project Link: https://github.com/username/remote-sensing
 
 Acknowledgments
