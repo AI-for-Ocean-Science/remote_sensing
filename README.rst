@@ -1,0 +1,137 @@
+.. |forks| image:: https://img.shields.io/github/forks/AI-for-Ocean-Science/remote_sensing?style=social 
+   :target: https://github.com/AI-for-Ocean-Science/remote_sensing
+
+.. |stars| image:: https://img.shields.io/github/stars/AI-for-Ocean-Science/remote_sensing?style=social
+   :target: https://github.com/AI-for-Ocean-Science/remote_sensing
+
+
+Remote Sensing |forks| |stars|
+==============================
+
+.. image:: https://readthedocs.org/projects/remote-sensing/badge/?version=latest
+    :target: https://remote-sensing.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
+
+A Python package for processing and analyzing remote sensing data, with a focus on sea surface temperature (SST) data and HEALPix mapping.
+
+Features
+--------
+
+* HEALPix map processing and visualization
+* Sea Surface Temperature (SST) data handling
+* PODAAC data downloading interface
+* Global map visualization tools
+* KML file generation for Google Earth
+* Comprehensive I/O utilities
+
+Quick Start
+----------
+
+Installation
+~~~~~~~~~~~
+
+.. code-block:: bash
+
+    pip install remote-sensing
+
+For development installation:
+
+.. code-block:: bash
+
+    git clone https://github.com/username/remote-sensing.git
+    cd remote-sensing
+    pip install -e .
+
+Basic Usage
+~~~~~~~~~~
+
+Download SST data from PODAAC:
+
+.. code-block:: python
+
+    from remote_sensing.download import podaac
+
+    # Get recent AMSR2 data
+    files, checksums = podaac.grab_file_list(
+        'AMSR2-REMSS-L2P_RT-v8.2',
+        dt_past={'days': 1}
+    )
+
+    # Download the files
+    podaac.download_files(files)
+
+Create and visualize a HEALPix map:
+
+.. code-block:: python
+
+    from remote_sensing.rs_healpix import RS_Healpix
+
+    # Create HEALPix map from dataset
+    hp_map = RS_Healpix.from_dataset_file(
+        'sst_file.nc',
+        'sea_surface_temperature',
+        resol_km=25
+    )
+
+    # Plot the map
+    hp_map.plot(
+        vmin=0, vmax=30,
+        cmap='viridis',
+        cb_lbl='Temperature (°C)'
+    )
+
+Requirements
+-----------
+
+* Python 3.8+
+* numpy
+* matplotlib
+* cartopy
+* healpy
+* xarray
+* pandas
+* simplekml
+
+For PODAAC downloads:
+
+* requests
+* earthdata-download
+
+Documentation
+------------
+
+Full documentation is available at `https://remote-sensing.readthedocs.io/ <https://remote-sensing.readthedocs.io/>`_
+
+Contributing
+-----------
+
+We welcome contributions! Please see our `Contributing Guide <CONTRIBUTING.md>`_ for details.
+
+1. Fork the repository
+2. Create your feature branch (``git checkout -b feature/amazing-feature``)
+3. Commit your changes (``git commit -m 'Add some amazing feature'``)
+4. Push to the branch (``git push origin feature/amazing-feature``)
+5. Open a Pull Request
+
+License
+-------
+
+This project is licensed under the MIT License - see the `LICENSE <LICENSE>`_ file for details.
+
+Authors
+-------
+
+* Your Name - *Initial work*
+
+Contact
+-------
+
+* Email: your.email@example.com
+* Project Link: https://github.com/username/remote-sensing
+
+Acknowledgments
+-------------
+
+* HEALPix for the hierarchical pixelization scheme
+* PODAAC for providing access to remote sensing data
+* Contributors who have helped improve this package
