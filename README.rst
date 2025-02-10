@@ -30,11 +30,7 @@ Quick Start
 Installation
 ~~~~~~~~~~~
 
-.. code-block:: bash
-
-    pip install remote-sensing
-
-For development installation:
+Clone the repository and install in development mode:
 
 .. code-block:: bash
 
