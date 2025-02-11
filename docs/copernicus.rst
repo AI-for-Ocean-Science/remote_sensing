@@ -27,3 +27,6 @@ NRT
 Altimeter satellite gridded Sea Level Anomalies (SLA) computed with respect to a twenty-year [1993, 2012] mean. The SLA is estimated by Optimal Interpolation, 
 merging the L3 along-track measurement 
 from the different altimeter missions available.
+
+dataset_id="cmems_obs-sl_glo_phy-ssh_nrt_allsat-l4-duacs-0.125deg_P1D"
+
