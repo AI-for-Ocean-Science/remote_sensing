@@ -1,0 +1,16 @@
+#!/usr/bin/env python
+#
+# See top-level LICENSE file for Copyright information
+#
+# -*- coding: utf-8 -*-
+
+
+"""
+This script enables one to view a netCDF file in a matplotlib window.
+"""
+
+import remote_sensing.scripts.view_nc as view_nc
+
+if __name__ == '__main__':
+    args = view_nc.parser()
+    view_nc.main(args)
