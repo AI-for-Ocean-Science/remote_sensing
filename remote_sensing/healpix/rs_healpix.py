@@ -134,27 +134,33 @@ class RS_Healpix(object):
 
         """
         nside = None
+        # Load
         ds = xarray.open_dataset(filename)
-        if ds.lat.ndim == 1:
+
+        # Grab the coords
+        lat = nc_utils.find_coord(ds, 'lat')
+        lon = nc_utils.find_coord(ds, 'lon')
+        
+        if ds[lat].ndim == 1:
             if lat_slice is not None:
                 ds = ds.sel(lat=lat_slice)
             if lon_slice is not None:
                 ds = ds.sel(lon=lon_slice)
-        if ds.lat.ndim == 2:
+        if ds[lat].ndim == 2:
             # Deal with junk
-            junk = ds.lat < -1000.
-            ds.lat.data[junk] = np.nan
+            junk = ds[lat] < -1000.
+            ds[lat].data[junk] = np.nan
             #
-            junk = ds.lon < -1000.
-            ds.lon.data[junk] = np.nan
+            junk = ds[lon] < -1000.
+            ds[lon].data[junk] = np.nan
 
             # Cut with NaNs
             if lat_slice is not None:
-                junk = (ds.lat < lat_slice[0]) | (ds.lat > lat_slice[1])
-                ds.lat.data[junk] = np.nan
+                junk = (ds[lat] < lat_slice[0]) | (ds[lat] > lat_slice[1])
+                ds[lat].data[junk] = np.nan
             if lon_slice is not None:
-                junk = (ds.lon < lon_slice[0]) | (ds.lon > lon_slice[1])
-                ds.lon.data[junk] = np.nan
+                junk = (ds[lon] < lon_slice[0]) | (ds[lon] > lon_slice[1])
+                ds[lon].data[junk] = np.nan
             # nside 
             if resol_km is None:
                 raise ValueError("Must provide resol_km for 2D lat/lon arrays")
@@ -205,9 +211,17 @@ class RS_Healpix(object):
         """
         reload(hp_utils)
 
+        # Unpack
+        # Grab the coords
+        lat = nc_utils.find_coord(da, 'lat')
+        lon = nc_utils.find_coord(da, 'lon')
+        lat = da[lat].data
+        lon = da[lon].data
+
         
         hp_counts, hp_values, hp_lons, hp_lats, nside = \
-            hp_utils.da_to_healpix(da, nside=nside)
+            hp_utils.arrays_to_healpix(
+                lat, lon, da.data, nside=nside)
 
         # Instantiate
         rsh = cls(nside)
@@ -249,7 +263,8 @@ class RS_Healpix(object):
         
     def plot(self, **kwargs):
         """ Plot the HEALPix map. """
-        return globe.plot_lons_lats_vals(self.lons, self.lats, self.hp, **kwargs)
+        return globe.plot_lons_lats_vals(
+            self.lons, self.lats, self.hp, **kwargs)
         
 
     def __repr__(self):
