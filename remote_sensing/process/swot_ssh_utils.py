@@ -28,6 +28,70 @@ import requests
 import json
 import scipy.interpolate
 
+from IPython import embed
+
+def process_ds(ds, lat_lim=None):
+
+    def subset(data_in,lat_bounds):
+        lat=np.nanmean(data_in['latitude'].data,axis=-1)
+        lat=np.where(np.isnan(lat),100,lat)
+        l0,l1=lat_bounds
+        i0=np.where(np.abs(lat-l0)==np.abs(lat-l0).min())[0][0]
+        i1=np.where(np.abs(lat-l1)==np.abs(lat-l1).min())[0][0]
+        if i0>i1:i0,i1=i1,i0
+        if i0==i1:
+            return []
+        #sub = data_in.sel(num_lines=slice(i0, i1))
+        # Subset all variables that share the latitude dimension
+        subset_vars = {}
+        for varname, var in data_in.data_vars.items():
+            if var.dims==2:
+                subset_vars[varname] = var[i0:i1,:]
+            else:
+                subset_vars[varname] = var[i0:i1]
+        # Combine the subset variables into a new dataset
+        subset_data = xr.Dataset(subset_vars, attrs=data_in.attrs)
+        return subset_data
+
+    # Slice
+    if lat_lim is not None:
+        ds = subset(ds, lat_lim)
+
+    # Preprocess data
+    ssha = ds.ssha_karin_2
+    flag = ds.ancillary_surface_classification_flag
+    ssha = np.where(flag == 0, ssha, np.nan)
+    ssha_err = ds.ssh_karin_uncert
+    ssha_err = np.where(flag==0,ssha_err,np.nan)
+
+    lon = ds.longitude.values
+    lat = ds.latitude.values
+    distance = ds.cross_track_distance.values
+    date = ds.time.mean().values
+
+    # Bias correction (optional)
+    ssha_1 = fit_bias(ssha, distance,
+        order=3, # polynomial to fit
+        check_bad_point_threshold=0.1,
+        remove_along_track_polynomial=True
+    )
+
+    # mask out data in nadir and outside of 60km swath width
+    distance = np.nanmean(distance, axis=0 )
+    msk = (np.abs(distance) < 60e3) & (np.abs(distance) > 10e3)
+    lon[:, ~msk] = np.nan
+    lat[:, ~msk] = np.nan
+    ssha_1[:, ~msk] = np.nan
+
+    # Add ssha_1 to the dataset
+    ds['ssha_1'] = (('along_track', 'across_track'), ssha_1)
+
+    # Nan me
+    ds.longitude.data = lon
+    ds.latitude.data = lat
+
+    return ds
+
 def interp_expert_to_unsmoothed(
         expert_lon, expert_lat, expert_var, unsmoothed_lon, unsmoothed_lat):
     """

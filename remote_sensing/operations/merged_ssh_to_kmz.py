@@ -119,12 +119,12 @@ def main(args):
         # 
         print(f"Generated RS_Healpix from {data_file}")
         # Add
-        h09_hpxs.append(rs_hpx)
+        swot_hpxs.append(rs_hpx)
         del(rs_hpx)
     # Stack
-    h09_stack = rs_healpix.RS_Healpix.from_list(h09_hpxs)
+    swot_stack = rs_healpix.RS_Healpix.from_list(swot_hpxs)
     if args.show:
-        h09_stack.plot(figsize=(10.,6), cmap='jet', 
+        swot_stack.plot(figsize=(10.,6), cmap='jet', 
                        lon_lim=lon_lim, lat_lim=lat_lim, 
                        projection='platecarree',
                        show=True)
