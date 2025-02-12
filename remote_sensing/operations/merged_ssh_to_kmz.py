@@ -8,6 +8,7 @@ import xarray
 import argparse
 
 from remote_sensing.download import podaac
+from remote_sensing.download import copernicus
 from remote_sensing.healpix import rs_healpix
 from remote_sensing import io as rs_io
 from remote_sensing import kml as rs_kml
@@ -21,33 +22,38 @@ lat_lim = (18.,23)
 def main(args):
 
     if args.use_json is None:
-        raise NotImplementedError("NEED TO MODIFY THIS")
-        # Grab the latest data
-        amsr2_files, _ = podaac.grab_file_list(
-            'AMSR2-REMSS-L2P_RT-v8.2', 
+
+        # Grab the latest Level 4 data
+        print("Downloading Level 4 file")
+        local_geol4 = [copernicus.grab_download_file(
+                "cmems_obs-sl_glo_phy-ssh_nrt_allsat-l4-duacs-0.125deg_P1D", 
+                ["sla", "err_sla"],
+                lon_lim=lon_lim, lat_lim=lat_lim,
             t_end=args.t_end,
             dt_past=dict(days=args.ndays),
-            bbox='127,18,134,23')
+            )]
 
-        h09_files, _ = podaac.grab_file_list(
-            'H09-AHI-L3C-ACSPO-v2.90', dt_past=dict(days=args.ndays),
+        # Grab SWOT
+        swot_files, _ = podaac.grab_file_list(
+            'SWOT_L2_LR_SSH_EXPERT_2.0',
+            dt_past=dict(days=args.ndays),
             t_end=args.t_end,
-            bbox='127,18,134,23')
+            bbox=f'{lon_lim[0]},{lat_lim[0]},{lon_lim[1]},{lat_lim[1]}')
 
         # Download
-        print("Downloading AMSR2 files")
-        local_amsr2 = podaac.download_files(amsr2_files, verbose=args.verbose)
-        print("Downloading Himawari files")
-        local_h09 = podaac.download_files(h09_files, verbose=args.verbose)
+        print("Downloading SWOT files")
+        local_swot = podaac.download_files(
+            swot_files, verbose=args.verbose)
         print("All done")
 
         sdict = {}
-        sdict['local_amsr2'] = local_amsr2
-        sdict['local_h09'] = local_h09
+        sdict['local_geol4'] = local_geol4
+        sdict['local_swot'] = local_swot
         sdict['namsr2'] = args.namsr2
         sdict['nh09'] = args.nh09
 
     else:
+        raise NotImplementedError("NEED TO MODIFY THIS")
         # Load filenames from JSON
         sdict = rs_io.loadjson(args.use_json)
         amsr2_files = sdict['local_amsr2']
@@ -56,11 +62,12 @@ def main(args):
             sdict['namsr2'] = args.namsr2
             sdict['nh09'] = args.nh09
 
-    # Use the latest H09 file for the timestamp
-    ds = xarray.open_dataset(sdict['local_h09'][0])
+    # Use the latest SWOT file for the timestamp
+    ds = xarray.open_dataset(sdict['local_swot'][0])
     time_root = str(ds.time.data[0]).replace(':','')[0:13]
 
     if args.use_json is None:
+        raise NotImplementedError("NEED TO MODIFY THIS")
         # Save files to a JSON file
         json_file = f'Merged_SST_{time_root}.json'
         jdict = rs_io.jsonify(sdict)
@@ -71,54 +78,39 @@ def main(args):
     # Healpix time
     # #############################
 
-    # AMSR2
-    amsr2_hpxs = []
-
     print("--------------------")
-    print("Generating AMSR2 stack")
+    print("Generating GEOL4")
     print("--------------------")
 
-    for data_file in sdict['local_amsr2'][0:sdict['namsr2']]:
-        # Objectify
-        rs_hpx = rs_healpix.RS_Healpix.from_dataset_file(
-            data_file, 'sea_surface_temperature',
-            time_isel=0, resol_km=11., 
+    data_file = sdict['local_geol4'][0]
+    # Objectify
+    geol4_stack = rs_healpix.RS_Healpix.from_dataset_file(
+            data_file, 'sla',
+            time_isel=0, 
             lat_slice=(18,23.),  lon_slice=(127., 134.))
         #
-        print(f"Generated RS_Healpix from {data_file}")
-        # Add
-        amsr2_hpxs.append(rs_hpx)
-
-    if args.debug:
-        pass
-        #embed(header='93 of gen')
-        #rs_hpx.save_to_nc('test.nc')
+    print(f"Generated RS_Healpix from {data_file}")
 
     # Combine?
-    if args.namsr2 > 1:
-        amsr2_stack = rs_healpix.RS_Healpix.from_list(amsr2_hpxs)
-    else:
-        amsr2_stack = amsr2_hpxs[0]
-
     if args.show:
-        print("Showing AMSR2 stack")
-        amsr2_stack.plot(figsize=(10.,6), cmap='jet', 
-                           lon_lim=lon_lim, lat_lim=lat_lim, 
-                           projection='platecarree', ssize=40., 
-                           vmin=23.7, vmax=27., show=True)
-        #if args.debug:
-        #    embed(header='Check AMSR2 stack')
+        print("Showing GEOL4 stack")
+        geol4_stack.plot(figsize=(10.,6), cmap='jet', 
+                         lon_lim=lon_lim, lat_lim=lat_lim, 
+                         projection='platecarree', ssize=40., 
+                         show=True)
+        if args.debug:
+            embed(header='Check GEOL4 stack')
 
     print("--------------------")
-    print("Generating H09 stack")
+    print("Generating SWOT stack")
     print("--------------------")
 
     # #############################
-    h09_hpxs = []
+    swot_hpxs = []
     if args.debug:
         from importlib import reload
         embed(header='110 of gen')
-    for data_file in sdict['local_h09'][0:sdict['nh09']]:
+    for data_file in sdict['local_swot'][0:sdict['nswot']]:
         # Objectify
         rs_hpx = rs_healpix.RS_Healpix.from_dataset_file(
             data_file, 'sea_surface_temperature',
@@ -178,11 +170,9 @@ def parse_option():
     Returns:
         args: (dict) dictionary of the arguments.
     """
-    parser = argparse.ArgumentParser("Merged SST KMZ script")
-    parser.add_argument("--namsr2", type=int, 
-                        default=1, help="Number of exposures of AMSR2 to combine")
-    parser.add_argument("--nh09", type=int, 
-                        default=10, help="Number of hours of Himawari images to combine")
+    parser = argparse.ArgumentParser("Merged SSH KMZ script")
+    parser.add_argument("--nswot", type=int, 
+                        default=10, help="Number of SWOT images to combine")
     parser.add_argument("--ndays", type=int, 
                         default=2, help="Number of days into the past to consdier for images")
     parser.add_argument("--t_end", type=str, 
