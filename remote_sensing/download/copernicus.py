@@ -6,6 +6,8 @@ import copernicusmarine
 
 from remote_sensing.download import utils as down_utils
 
+from IPython import embed
+
 if os.getenv('OS_RS') is not None:
     copernicus_path = os.path.join(os.getenv('OS_RS'), 'COPERN')
 else:
@@ -31,7 +33,8 @@ def grab_download_file(dataset_id:str, variables:list,
               outdir:str=None,
               skip_download:bool=False,
               skip_existing:bool=True, 
-              overwrite:bool=False):
+              overwrite:bool=False,
+              debug:bool=False):
     # Login
     login()
 
@@ -44,6 +47,8 @@ def grab_download_file(dataset_id:str, variables:list,
     start_datetime, end_datetime = down_utils.find_startend_datetime(
         time_range, t_end, dt_past)
 
+    if debug:
+        embed(header='51 of copernicus.py')
     response_default_service = copernicusmarine.subset(
         dataset_id=dataset_id, #"cmems_obs-sl_glo_phy-ssh_nrt_allsat-l4-duacs-0.125deg_P1D",
         variables=variables, #["sla", "err_sla"],

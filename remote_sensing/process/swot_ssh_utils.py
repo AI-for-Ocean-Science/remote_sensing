@@ -84,10 +84,10 @@ def process_ds(ds, lat_lim=None):
     ssha_1[:, ~msk] = np.nan
 
     # Create a new dataset
-    embed(header='87 of swot_ssh_utils')
     ds = xr.Dataset()
-    ds['longitude'] = (('num_lines', 'num_pixels'), lon)
-    ds['latitude'] = (('num_lines', 'num_pixels'), lat)
+    # Generate coordinates
+    ds.coords['latitude'] = (('num_lines', 'num_pixels'), lat)
+    ds.coords['longitude'] = (('num_lines', 'num_pixels'), lon)
     ds['ssha_1'] = (('num_lines', 'num_pixels'), ssha_1)
 
     return ds

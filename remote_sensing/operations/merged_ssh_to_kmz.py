@@ -10,6 +10,7 @@ import argparse
 from remote_sensing.download import podaac
 from remote_sensing.download import copernicus
 from remote_sensing.healpix import rs_healpix
+from remote_sensing.healpix import utils as hp_utils
 from remote_sensing import io as rs_io
 from remote_sensing import kml as rs_kml
 from remote_sensing.process import swot_ssh_utils 
@@ -27,12 +28,12 @@ def main(args):
         # Grab the latest Level 4 data
         print("Downloading Level 4 file")
         local_geol4 = [copernicus.grab_download_file(
-                "cmems_obs-sl_glo_phy-ssh_nrt_allsat-l4-duacs-0.125deg_p1d", 
+                "cmems_obs-sl_glo_phy-ssh_nrt_allsat-l4-duacs-0.125deg_P1D", 
                 ["sla", "err_sla"],
                 lon_lim=lon_lim, lat_lim=lat_lim,
             t_end=args.t_end,
             dt_past=dict(days=1),
-            )]
+            debug=args.debug)]
 
         # Grab SWOT
         swot_files, _ = podaac.grab_file_list(
@@ -93,12 +94,13 @@ def main(args):
     # Combine?
     if args.show:
         print("Showing GEOL4 stack")
-        geol4_stack.plot(figsize=(10.,6), cmap='jet', 
+        geol4_stack.plot(figsize=(10.,6), cmap='seismic', 
                          lon_lim=lon_lim, lat_lim=lat_lim, 
-                         projection='platecarree', ssize=40., 
+                         projection='platecarree', ssize=100., 
                          show=True)
         #if args.debug:
         #    embed(header='Check GEOL4 stack')
+
 
     print("--------------------")
     print("Generating SWOT stack")
@@ -113,11 +115,16 @@ def main(args):
             embed(header='110 of gen')
 
         ds = xarray.open_dataset(data_file)
-        ds2 = swot_ssh_utils.process_ds(ds, lat_lim=lat_lim)
-        da = ds2['ssha_1']
+
+        #ds2 = swot_ssh_utils.process_ds(ds, lat_lim=lat_lim)
+        #da = ds2['ssha_1']
+
+        # Translate to deg
+        delta_lat = 2. / 111.1
+        nside, _ = hp_utils.get_nside_from_angular_size(delta_lat)
         
         # Objectify
-        rs_hpx = rs_healpix.RS_Healpix.from_dataarray(da)
+        rs_hpx = rs_healpix.RS_Healpix.from_dataarray(da, nside=nside)
         # 
         print(f"Generated RS_Healpix from {data_file}")
         # Add
@@ -126,7 +133,7 @@ def main(args):
     # Stack
     swot_stack = rs_healpix.RS_Healpix.from_list(swot_hpxs)
     if args.show:
-        swot_stack.plot(figsize=(10.,6), cmap='jet', 
+        swot_stack.plot(figsize=(10.,6), cmap='seismic', 
                        lon_lim=lon_lim, lat_lim=lat_lim, 
                        projection='platecarree',
                        show=True)
@@ -137,20 +144,25 @@ def main(args):
     if args.show:
         swot_stack.plot(figsize=(10.,6), cmap='jet', 
                        lon_lim=lon_lim, lat_lim=lat_lim,
-                       projection='platecarree', vmin=20.)
+                       projection='platecarree', vmin=20.,
+                       show=True)
+
 
     # #############################33
     # KMZ
-    _, img = swot_stack.plot(figsize=(10.,6), cmap='jet', 
+    _, img = swot_stack.plot(figsize=(10.,6), cmap='seismic', 
                              lon_lim=lon_lim, lat_lim=lat_lim, 
                              add_colorbar=False, 
-                             projection='platecarree', vmin=20., 
-                             savefig='kml_test.png', dpi=1200, 
-                             marker=',')
-    rs_kml.colorbar(img, 'SST (C)', 'colorbar.png')
+                             ssize=40.,
+                             vmin=-0.1, vmax=0.1,
+                             projection='platecarree', #vmin=20., 
+                             savefig='kml_test.png', dpi=300, 
+                             #marker=',')
+    )
+    rs_kml.colorbar(img, 'SSHa (cm)', 'colorbar.png')
 
     # Write
-    outfile = f'Merged_SST_{time_root}.kmz'
+    outfile = f'Merged_SSH_{time_root}.kmz'
     rs_kml.make_kml(llcrnrlon=lon_lim[0], llcrnrlat=lat_lim[0],
         urcrnrlon=lon_lim[1], urcrnrlat=lat_lim[1],
         figs=['kml_test.png'], colorbar='colorbar.png',
