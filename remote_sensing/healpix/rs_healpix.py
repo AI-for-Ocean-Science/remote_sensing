@@ -140,12 +140,13 @@ class RS_Healpix(object):
         # Grab the coords
         lat = nc_utils.find_coord(ds, 'lat')
         lon = nc_utils.find_coord(ds, 'lon')
-        
+
         if ds[lat].ndim == 1:
             if lat_slice is not None:
-                ds = ds.sel(lat=lat_slice)
+                #embed(header='Check lat_slice')
+                ds = ds.sel({lat: lat_slice})
             if lon_slice is not None:
-                ds = ds.sel(lon=lon_slice)
+                ds = ds.sel({lon: lon_slice})
         if ds[lat].ndim == 2:
             # Deal with junk
             junk = ds[lat] < -1000.
@@ -215,7 +216,10 @@ class RS_Healpix(object):
         # Grab the coords
         lat = nc_utils.find_coord(da, 'lat')
         lon = nc_utils.find_coord(da, 'lon')
-        lat = da[lat].data
+        try:
+            lat = da[lat].data
+        except:
+            embed(header='Check lat')
         lon = da[lon].data
 
         

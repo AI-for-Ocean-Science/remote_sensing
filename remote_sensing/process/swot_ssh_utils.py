@@ -83,12 +83,12 @@ def process_ds(ds, lat_lim=None):
     lat[:, ~msk] = np.nan
     ssha_1[:, ~msk] = np.nan
 
-    # Add ssha_1 to the dataset
-    ds['ssha_1'] = (('along_track', 'across_track'), ssha_1)
-
-    # Nan me
-    ds.longitude.data = lon
-    ds.latitude.data = lat
+    # Create a new dataset
+    embed(header='87 of swot_ssh_utils')
+    ds = xr.Dataset()
+    ds['longitude'] = (('num_lines', 'num_pixels'), lon)
+    ds['latitude'] = (('num_lines', 'num_pixels'), lat)
+    ds['ssha_1'] = (('num_lines', 'num_pixels'), ssha_1)
 
     return ds
 

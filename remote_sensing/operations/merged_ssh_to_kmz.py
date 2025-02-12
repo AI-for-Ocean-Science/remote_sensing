@@ -12,6 +12,7 @@ from remote_sensing.download import copernicus
 from remote_sensing.healpix import rs_healpix
 from remote_sensing import io as rs_io
 from remote_sensing import kml as rs_kml
+from remote_sensing.process import swot_ssh_utils 
 
 from IPython import embed
 
@@ -26,11 +27,11 @@ def main(args):
         # Grab the latest Level 4 data
         print("Downloading Level 4 file")
         local_geol4 = [copernicus.grab_download_file(
-                "cmems_obs-sl_glo_phy-ssh_nrt_allsat-l4-duacs-0.125deg_P1D", 
+                "cmems_obs-sl_glo_phy-ssh_nrt_allsat-l4-duacs-0.125deg_p1d", 
                 ["sla", "err_sla"],
                 lon_lim=lon_lim, lat_lim=lat_lim,
             t_end=args.t_end,
-            dt_past=dict(days=args.ndays),
+            dt_past=dict(days=1),
             )]
 
         # Grab SWOT
@@ -49,25 +50,20 @@ def main(args):
         sdict = {}
         sdict['local_geol4'] = local_geol4
         sdict['local_swot'] = local_swot
-        sdict['namsr2'] = args.namsr2
-        sdict['nh09'] = args.nh09
+        sdict['nswot'] = args.nswot
 
     else:
-        raise NotImplementedError("NEED TO MODIFY THIS")
         # Load filenames from JSON
         sdict = rs_io.loadjson(args.use_json)
-        amsr2_files = sdict['local_amsr2']
-        h09_files = sdict['local_h09']
-        if 'namsr2' not in sdict:
-            sdict['namsr2'] = args.namsr2
-            sdict['nh09'] = args.nh09
+        local_geol4 = sdict['local_geol4']
+        local_swot = sdict['local_swot']
+        sdict['nswot'] = args.nswot
 
     # Use the latest SWOT file for the timestamp
     ds = xarray.open_dataset(sdict['local_swot'][0])
     time_root = str(ds.time.data[0]).replace(':','')[0:13]
 
     if args.use_json is None:
-        raise NotImplementedError("NEED TO MODIFY THIS")
         # Save files to a JSON file
         json_file = f'Merged_SST_{time_root}.json'
         jdict = rs_io.jsonify(sdict)
@@ -78,6 +74,7 @@ def main(args):
     # Healpix time
     # #############################
 
+
     print("--------------------")
     print("Generating GEOL4")
     print("--------------------")
@@ -87,9 +84,11 @@ def main(args):
     geol4_stack = rs_healpix.RS_Healpix.from_dataset_file(
             data_file, 'sla',
             time_isel=0, 
-            lat_slice=(18,23.),  lon_slice=(127., 134.))
+            lat_slice=slice(lat_lim[0], lat_lim[1]),
+            lon_slice=slice(lon_lim[0], lon_lim[1]))
         #
     print(f"Generated RS_Healpix from {data_file}")
+
 
     # Combine?
     if args.show:
@@ -98,8 +97,8 @@ def main(args):
                          lon_lim=lon_lim, lat_lim=lat_lim, 
                          projection='platecarree', ssize=40., 
                          show=True)
-        if args.debug:
-            embed(header='Check GEOL4 stack')
+        #if args.debug:
+        #    embed(header='Check GEOL4 stack')
 
     print("--------------------")
     print("Generating SWOT stack")
@@ -107,15 +106,18 @@ def main(args):
 
     # #############################
     swot_hpxs = []
-    if args.debug:
-        from importlib import reload
-        embed(header='110 of gen')
     for data_file in sdict['local_swot'][0:sdict['nswot']]:
+        # Load the data
+        if args.debug:
+            from importlib import reload
+            embed(header='110 of gen')
+
+        ds = xarray.open_dataset(data_file)
+        ds2 = swot_ssh_utils.process_ds(ds, lat_lim=lat_lim)
+        da = ds2['ssha_1']
+        
         # Objectify
-        rs_hpx = rs_healpix.RS_Healpix.from_dataset_file(
-            data_file, 'sea_surface_temperature',
-            lat_slice=slice(23,18),  lon_slice=slice(127., 134.), 
-            time_isel=0, debug=args.debug)
+        rs_hpx = rs_healpix.RS_Healpix.from_dataarray(da)
         # 
         print(f"Generated RS_Healpix from {data_file}")
         # Add
@@ -130,16 +132,16 @@ def main(args):
                        show=True)
 
     # Fill in
-    h09_stack.fill_in(amsr2_stack, (lon_lim[0], lon_lim[1], 
+    swot_stack.fill_in(geol4_stack, (lon_lim[0], lon_lim[1], 
                                       lat_lim[0], lat_lim[1]))
     if args.show:
-        h09_stack.plot(figsize=(10.,6), cmap='jet', 
+        swot_stack.plot(figsize=(10.,6), cmap='jet', 
                        lon_lim=lon_lim, lat_lim=lat_lim,
                        projection='platecarree', vmin=20.)
 
     # #############################33
     # KMZ
-    _, img = h09_stack.plot(figsize=(10.,6), cmap='jet', 
+    _, img = swot_stack.plot(figsize=(10.,6), cmap='jet', 
                              lon_lim=lon_lim, lat_lim=lat_lim, 
                              add_colorbar=False, 
                              projection='platecarree', vmin=20., 
@@ -174,7 +176,7 @@ def parse_option():
     parser.add_argument("--nswot", type=int, 
                         default=10, help="Number of SWOT images to combine")
     parser.add_argument("--ndays", type=int, 
-                        default=2, help="Number of days into the past to consdier for images")
+                        default=10, help="Number of days into the past to consdier for images")
     parser.add_argument("--t_end", type=str, 
                         help="End time, ISO format e.g. 2025-02-07T04:00:00Z")
     parser.add_argument("--outdir", type=str, default='./',
