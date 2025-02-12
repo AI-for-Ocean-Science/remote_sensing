@@ -233,6 +233,7 @@ class RS_Healpix(object):
         # Return
         return rsh
 
+
     def fill_in(self, rs_hp, bbox:tuple):
         """
         Fill in the RS_Healpix object from another RS_Healpix object.
@@ -265,6 +266,30 @@ class RS_Healpix(object):
         """ Plot the HEALPix map. """
         return globe.plot_lons_lats_vals(
             self.lons, self.lats, self.hp, **kwargs)
+
+    def save_to_nc(self, outfile:str):
+        """ Save the HEALPix map to a NetCDF file. """
+
+        # Create the dataset
+        da = xarray.DataArray(
+            data=self.hp.data,
+            coords={
+                'healpix': np.arange(self.hp.data.size),  # Index coordinate
+                'lat': ('healpix', self.lats),
+                'lon': ('healpix', self.lons)
+            },
+            dims=['healpix'],
+            name='sea_surface_temperature',
+            attrs={
+                'units': '°C',
+                'long_name': 'Sea Surface Temperature',
+                'standard_name': 'sea_surface_temperature'
+            }
+        )
+
+        # Save
+        da.to_netcdf(outfile)
+        print(f"Saved to {outfile}")
         
 
     def __repr__(self):

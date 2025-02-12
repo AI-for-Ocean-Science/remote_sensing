@@ -73,7 +73,7 @@ def get_nside_from_lats(lats:np.ndarray):
         raise ValueError("We expect a 1D array of latitudes")
     
     # Find the median latitude setp size
-    delta_lat = np.nanmedian(np.diff(lats))
+    delta_lat = np.abs(np.nanmedian(np.diff(lats)))
 
     # nside
     return get_nside_from_angular_size(delta_lat)
@@ -129,7 +129,7 @@ def arrays_to_healpix(lat:np.ndarray,
 
     # Pixels
     if nside is None:
-        nside, _ = get_nside_from_lats(lats)
+        nside, _ = get_nside_from_lats(lat)
     npix_hp = healpy.nside2npix(nside)
     
     # Deal with NaNs

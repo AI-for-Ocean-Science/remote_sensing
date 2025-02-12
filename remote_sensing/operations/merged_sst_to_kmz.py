@@ -2,6 +2,7 @@
 SST sources (microwave and IR)
 
 This example was used for the ARCTERX 2025, Leg 2"""
+import os
 
 import xarray
 import argparse
@@ -87,6 +88,11 @@ def main(args):
         # Add
         amsr2_hpxs.append(rs_hpx)
 
+    if args.debug:
+        pass
+        #embed(header='93 of gen')
+        #rs_hpx.save_to_nc('test.nc')
+
     # Combine?
     if args.namsr2 > 1:
         amsr2_stack = rs_healpix.RS_Healpix.from_list(amsr2_hpxs)
@@ -153,8 +159,15 @@ def main(args):
     rs_kml.make_kml(llcrnrlon=lon_lim[0], llcrnrlat=lat_lim[0],
         urcrnrlon=lon_lim[1], urcrnrlat=lat_lim[1],
         figs=['kml_test.png'], colorbar='colorbar.png',
-        kmzfile=outfile, name='Merged SST')
+        kmzfile=os.path.join(args.outdir,outfile), 
+        name='Merged SST')
     print(f"Generated: {outfile}")
+
+    # NetCDF ?
+    if args.create_nc:
+        outfile = outfile.replace('.kmz', '.nc')
+        # Save to netCDF
+        h09_stack.save_to_nc(os.path.join(args.outdir, outfile))
 
 
 def parse_option():
@@ -173,8 +186,12 @@ def parse_option():
                         default=2, help="Number of days into the past to consdier for images")
     parser.add_argument("--t_end", type=str, 
                         help="End time, ISO format e.g. 2025-02-07T04:00:00Z")
+    parser.add_argument("--outdir", type=str, default='./',
+                        help="Output directory")
     parser.add_argument('--debug', default=False, action='store_true',
                         help='Debug?')
+    parser.add_argument('-n', '--create_nc', default=False, action='store_true',
+                        help='Create netCDF file too?')
     parser.add_argument('-s', '--show', default=False, action='store_true',
                         help='show extra plots?')
     parser.add_argument('--verbose', default=False, action='store_true',
