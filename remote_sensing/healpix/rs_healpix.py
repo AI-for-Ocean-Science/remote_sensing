@@ -267,16 +267,23 @@ class RS_Healpix(object):
         return globe.plot_lons_lats_vals(
             self.lons, self.lats, self.hp, **kwargs)
 
-    def save_to_nc(self, outfile:str):
+    def save_to_nc(self, outfile:str,
+                   full_healpix:bool=True):
         """ Save the HEALPix map to a NetCDF file. """
+
+        # Reduce
+        if full_healpix:
+            good = np.ones_like(self.hp.data, dtype=bool)
+        else:
+            good = ~self.hp.mask
 
         # Create the dataset
         da = xarray.DataArray(
-            data=self.hp.data,
+            data=self.hp.data[good].astype(np.float32),
             coords={
-                'healpix': np.arange(self.hp.data.size),  # Index coordinate
-                'lat': ('healpix', self.lats),
-                'lon': ('healpix', self.lons)
+                'healpix': np.arange(self.hp.data.size)[good],  # Index coordinate
+                'lat': ('healpix', self.lats[good].astype(np.float32)),
+                'lon': ('healpix', self.lons[good].astype(np.float32))
             },
             dims=['healpix'],
             name='sea_surface_temperature',
@@ -287,8 +294,9 @@ class RS_Healpix(object):
             }
         )
 
-        # Save
+        # Save with encoding
         da.to_netcdf(outfile)
+            #encoding={'sea_surface_temperature': {'zlib': True}})
         print(f"Saved to {outfile}")
         
 

@@ -1,5 +1,5 @@
-""" Generate a Merged SST product from two 
-SST sources (microwave and IR)
+""" Generate a Merged SSH product from two 
+SSH sources (AVISO+ and SWOT)
 
 This example was used for the ARCTERX 2025, Leg 2"""
 import os
@@ -17,12 +17,11 @@ from IPython import embed
 # Globals
 lon_lim = (127.,134)
 lat_lim = (18.,23)
-#lon_lim = (129.,132)
-#lat_lim = (19.,22.5)
 
 def main(args):
 
     if args.use_json is None:
+        raise NotImplementedError("NEED TO MODIFY THIS")
         # Grab the latest data
         amsr2_files, _ = podaac.grab_file_list(
             'AMSR2-REMSS-L2P_RT-v8.2', 
@@ -61,14 +60,6 @@ def main(args):
     ds = xarray.open_dataset(sdict['local_h09'][0])
     time_root = str(ds.time.data[0]).replace(':','')[0:13]
 
-    # Outfile
-    outfile = f'Merged_SST_{time_root}.kmz'
-
-    # Skip if exists and not --clobber
-    if os.path.exists(os.path.join(args.outdir, outfile)) and not args.clobber:
-        print(f"{outfile} exists.  Use --clobber to overwrite")
-        return
-
     if args.use_json is None:
         # Save files to a JSON file
         json_file = f'Merged_SST_{time_root}.json'
@@ -99,9 +90,9 @@ def main(args):
         amsr2_hpxs.append(rs_hpx)
 
     if args.debug:
-        #pass
+        pass
         #embed(header='93 of gen')
-        rs_hpx.save_to_nc('test.nc', full_healpix=False)
+        #rs_hpx.save_to_nc('test.nc')
 
     # Combine?
     if args.namsr2 > 1:
@@ -165,6 +156,7 @@ def main(args):
     rs_kml.colorbar(img, 'SST (C)', 'colorbar.png')
 
     # Write
+    outfile = f'Merged_SST_{time_root}.kmz'
     rs_kml.make_kml(llcrnrlon=lon_lim[0], llcrnrlat=lat_lim[0],
         urcrnrlon=lon_lim[1], urcrnrlat=lat_lim[1],
         figs=['kml_test.png'], colorbar='colorbar.png',
@@ -176,9 +168,7 @@ def main(args):
     if args.create_nc:
         outfile = outfile.replace('.kmz', '.nc')
         # Save to netCDF
-        h09_stack.save_to_nc(
-            os.path.join(args.outdir, outfile),
-            full_healpix=False)
+        h09_stack.save_to_nc(os.path.join(args.outdir, outfile))
 
 
 def parse_option():
