@@ -7,6 +7,7 @@ import os
 import numpy as np
 import healpy
 import xarray
+import pandas
 
 from remote_sensing.healpix import utils as hp_utils 
 from remote_sensing.plotting import globe
@@ -229,6 +230,9 @@ class RS_Healpix(object):
 
         # Instantiate
         rsh = cls(nside)
+
+        # Time
+        rsh.time = pandas.to_datetime(da.time.data)
 
         # Fill
         rsh.hp = hp_values
