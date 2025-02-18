@@ -212,4 +212,26 @@ def masked_in_box(hp:healpy.ma, box:tuple):
     # Done
     return np.where(masked)[0]
 
-    
+def check_masked(hp:healpy.ma, lons:np.ndarray, lats:np.ndarray):
+    """ Check whether the HealPIX is masked at the input locations
+
+    Args:
+        hp (healpy.ma): _description_
+        lons (np.ndarray): _description_
+        lats (np.ndarray): _description_
+
+    Returns:
+        np.ndarray: True = masked
+    """
+
+    nside = healpy.npix2nside(hp.size)
+
+    # Healpix coords
+    theta = (90 - lats) * np.pi / 180. 
+    phi = lons * np.pi / 180.
+
+    idx = healpy.pixelfunc.ang2pix(
+        nside, theta, phi) 
+
+    # Check 
+    return hp.mask[idx]

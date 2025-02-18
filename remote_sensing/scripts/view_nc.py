@@ -41,6 +41,10 @@ def show_one(one_file:str, pargs):
     # Load 
     ds = xarray.open_dataset(one_file)
 
+    # Grab the coords
+    lat = nc_utils.find_coord(ds, 'lat')
+    lon = nc_utils.find_coord(ds, 'lon')
+
     # Grab the variable
     found_it = False
     if pargs.variable in ds.variables:
@@ -67,21 +71,22 @@ def show_one(one_file:str, pargs):
     # Time?
     if 'time' in da.dims:
         da = da.isel(time=pargs.itime)
+        
 
     # Unpack
-    if da.lat.ndim == 2:
+    if da[lat].ndim == 2:
         # Going to Healpix
-        lats = da.lat.values
-        lons = da.lon.values
-    elif da.lat.ndim == 1:
-        if da.lat[0] > da.lat[1]:
+        lats = da[lat].values
+        lons = da[lon].values
+    elif da[lat].ndim == 1:
+        if da[lat][0] > da[lat][1]:
             lat_slice = slice(pargs.lat_max, pargs.lat_min)
         else:
             lat_slice = slice(pargs.lat_min, pargs.lat_max)
         lon_slice = slice(pargs.lon_min, pargs.lon_max)
 
         # 
-        da = da.sel(lat=lat_slice, lon=lon_slice)
+        da = da.sel({lat:lat_slice, lon:lon_slice})
         da.plot()
         # Fuss
         fig = plt.gcf()
