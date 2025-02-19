@@ -116,9 +116,10 @@ def main(args):
 
         ds = xarray.open_dataset(data_file)
 
-        #ds2 = swot_ssh_utils.process_ds(ds, lat_lim=lat_lim)
-        #da = ds2['ssha_1']
+        ds2 = swot_ssh_utils.process_ds(ds, lat_lim=lat_lim)
+        da = ds2['ssha_1']
 
+        embed(header='122 of merged')
         # Translate to deg
         delta_lat = 2. / 111.1
         nside, _ = hp_utils.get_nside_from_angular_size(delta_lat)
@@ -186,9 +187,9 @@ def parse_option():
     """
     parser = argparse.ArgumentParser("Merged SSH KMZ script")
     parser.add_argument("--nswot", type=int, 
-                        default=10, help="Number of SWOT images to combine")
+                        default=10, help="Number of SWOT images to combine (default=10)")
     parser.add_argument("--ndays", type=int, 
-                        default=10, help="Number of days into the past to consdier for images")
+                        default=10, help="Number of days into the past to consdier for images (default=10)")
     parser.add_argument("--t_end", type=str, 
                         help="End time, ISO format e.g. 2025-02-07T04:00:00Z")
     parser.add_argument("--outdir", type=str, default='./',
